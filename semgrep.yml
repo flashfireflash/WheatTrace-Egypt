@@ -1,0 +1,13 @@
+rules:
+  - id: disable-xss-react
+    patterns:
+      - pattern: dangerouslySetInnerHTML
+    message: "React dangerouslySetInnerHTML is a potential XSS vector."
+    languages: [javascript, typescript]
+    severity: WARNING
+  - id: no-eval
+    patterns:
+      - pattern: eval(...)
+    message: "Avoid using eval() as it can lead to code execution vulnerabilities."
+    languages: [javascript, typescript, csharp]
+    severity: ERROR

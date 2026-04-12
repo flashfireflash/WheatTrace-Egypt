@@ -302,6 +302,12 @@ public class ReportsController : ControllerBase
     [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetSiteAggregation(Guid siteId)
     {
+        var site = await _db.StorageSites.FindAsync(siteId);
+        if (site == null) return NotFound();
+
+        if (_cu.Role == "GovernorateManager" && _cu.GovernorateId.HasValue && site.GovernorateId != _cu.GovernorateId)
+            return Forbid();
+
         var entries = await _db.DailyEntries
             .Where(e => e.SiteId == siteId)
             .ToListAsync();

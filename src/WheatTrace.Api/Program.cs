@@ -139,7 +139,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/api/health");
-await TestScript.Run(app.Services); Environment.Exit(0);
 app.MapGet("/health", () => Results.Ok(new {
     status = "healthy",
     time = DateTime.UtcNow

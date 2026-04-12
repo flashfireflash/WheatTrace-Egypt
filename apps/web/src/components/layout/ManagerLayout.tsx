@@ -130,11 +130,20 @@ export default function ManagerLayout() {
                 background: 'linear-gradient(135deg, var(--brand), var(--brand-light))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'white', fontWeight: 800, fontSize: '0.875rem',
-                cursor: 'pointer', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)'
+                cursor: 'pointer', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)',
+                position: 'relative'
               }}
               title="تعديل الملف الشخصي"
             >
-              {user?.avatar ? <img src={user.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+              {initials}
+              {user?.avatar && user.avatar.includes('/') && user.avatar !== 'null' && (
+                <img 
+                  src={user.avatar} 
+                  alt="" 
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', background: 'white' }} 
+                  onError={e => e.currentTarget.style.display = 'none'} 
+                />
+              )}
             </div>
           </div>
         </header>

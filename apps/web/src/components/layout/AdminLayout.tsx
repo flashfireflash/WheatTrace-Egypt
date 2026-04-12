@@ -103,8 +103,8 @@ function SidebarContent({ user, t, onClose, onLogout, pendingCount }: any) {
 
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          {user?.avatar ? (
-            <img src={user.avatar} alt="Avatar" className="sidebar-user-avatar" style={{ border: 'none', background: 'var(--surface-2)' }} />
+          {user?.avatar && user.avatar.includes('/') && user.avatar !== 'null' ? (
+            <img src={user.avatar} alt="Avatar" className="sidebar-user-avatar" style={{ border: 'none', background: 'var(--surface-2)' }} onError={e => e.currentTarget.style.display = 'none'} />
           ) : (
             <div className="sidebar-user-avatar">{initials}</div>
           )}
@@ -206,7 +206,7 @@ export default function AdminLayout() {
             <ThemeToggle />
             <button 
               onClick={() => setProfileOpen(true)}
-              style={user?.avatar ? {
+              style={user?.avatar && user.avatar.includes('/') && user.avatar !== 'null' ? {
                 width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', padding: 0,
                 border: '2px solid var(--border)', background: `url(${user.avatar}) center/cover`
               } : {
@@ -218,7 +218,7 @@ export default function AdminLayout() {
               }}
               title="إعدادات الحساب"
             >
-              {!user?.avatar && (user?.name?.slice(0, 2) ?? 'مد')}
+              {(!user?.avatar || !user.avatar.includes('/') || user.avatar === 'null') && (user?.name?.slice(0, 2) ?? 'مد')}
             </button>
           </div>
         </header>

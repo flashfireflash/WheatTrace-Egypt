@@ -94,7 +94,7 @@ export default function InspectorLayout() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{user?.name}</span>
-              {user?.avatar && <img src={user.avatar} alt="Avatar" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', background: 'var(--surface-2)', border: '1px solid rgba(255,255,255,0.2)' }} />}
+              {user?.avatar && user.avatar.includes('/') && user.avatar !== 'null' && <img src={user.avatar} alt="Avatar" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', background: 'var(--surface-2)', border: '1px solid rgba(255,255,255,0.2)' }} onError={e => e.currentTarget.style.display = 'none'} />}
             </div>
             <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{t.inspector}</span>
           </div>

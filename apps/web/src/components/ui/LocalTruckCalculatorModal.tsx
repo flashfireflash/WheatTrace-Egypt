@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Save, Calculator, Truck, Printer, Share2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '../../store/authStore';
@@ -257,9 +258,9 @@ export default function LocalTruckCalculatorModal({ isOpen, onClose, selectedDat
 
   const activeEntries = data[activeTab];
 
-  return (
+  return createPortal(
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
+      position: 'fixed', inset: 0, zIndex: 9999,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '1rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
       overflowY: 'auto'
@@ -368,6 +369,7 @@ export default function LocalTruckCalculatorModal({ isOpen, onClose, selectedDat
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

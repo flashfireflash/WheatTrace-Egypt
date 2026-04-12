@@ -67,7 +67,6 @@ export default function ManagerAssignments() {
     queryFn: () =>
       api.get('/users', { params: { role: 'Inspector', governorateId: user?.governorateId } })
          .then(r => (Array.isArray(r.data) ? r.data : r.data.items ?? []).filter((u: any) => u.role === 'Inspector')),
-    enabled: showModal, // تحميل كسلان (Lazy load) لتشغيله عند جلب النافذة المنبثقة فقط
   });
 
   // استقدام المواقع الجغرافية داخل محيط المحافظة
@@ -76,7 +75,6 @@ export default function ManagerAssignments() {
     queryFn: () =>
       api.get('/storage-sites', { params: { governorateId: user?.governorateId } })
          .then(r => Array.isArray(r.data) ? r.data : []),
-    enabled: showModal,
   });
 
   // جلب الورديات الخاصة بالدوام (صباحية، مسائية...)
@@ -162,11 +160,11 @@ export default function ManagerAssignments() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
           <Loader2 size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--brand)' }} />
         </div>
-      ) : assignments.length === 0 ? (
+      ) : inspectors.length === 0 ? (
         <div className="empty-state">
           <CalendarDays size={48} />
-          <h3>يوم فارغ</h3>
-          <p>لا تتواجد أي مخططات او مسارات وظيفية في اليوم المحدد من السجل الزمني</p>
+          <h3>لا يوجد مفتشون</h3>
+          <p>لا يوجد مفتشون مسجلون في هذه المحافظة</p>
         </div>
       ) : (
         <div className="table-wrapper">
@@ -181,49 +179,76 @@ export default function ManagerAssignments() {
               </tr>
             </thead>
             <tbody>
-              {assignments.map(a => (
-                <tr key={a.id} style={{ opacity: a.isActive ? 1 : 0.55 }}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--brand), var(--brand-light))',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0,
-                      }}>
-                        {a.inspectorName.slice(0, 2)}
+              {inspectors.map(inspector => {
+                const a = assignments.find(x => x.inspectorId === inspector.id);
+                return (
+                  <tr key={inspector.id} style={{ opacity: a && !a.isActive ? 0.55 : 1 }}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%',
+                          background: 'linear-gradient(135deg, var(--brand), var(--brand-light))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'white', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0,
+                        }}>
+                          {inspector.name.slice(0, 2)}
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{inspector.name}</span>
                       </div>
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{a.inspectorName}</span>
-                    </div>
-                  </td>
-                  <td style={{ fontSize: '0.875rem' }}>
-                    <div style={{ fontWeight: 600 }}>{a.siteName}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{a.governorateName}</div>
-                  </td>
-                  <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{a.shiftName ?? '—'}</td>
-                  <td>
-                    <span className={`badge ${statusColor[a.assignmentStatus] ?? 'badge'}`} style={{ fontSize: '0.75rem' }}>
-                      {a.isActive ? <><Check size={11} /> موكّل ونشط</> : a.assignmentStatus === 'Replaced' ? 'مستخلف ومُبدَّل' : 'مجمد وخامل'}
-                    </span>
-                  </td>
-                  <td>
-                    {/* السماح بسحب البساط في حالة الاستمرارية فقط */}
-                    {a.isActive && (
-                      <button
-                        className="btn btn-ghost btn-icon btn-sm"
-                        style={{ color: 'var(--danger)' }}
-                        title="طرد وفسخ العقد الميداني"
-                        onClick={() => {
-                          if (window.confirm(`هل أنت واثق من شطب تكليف الكادر ${a.inspectorName} من الخدمة في هذا اليوم؟`))
-                            deactivate(a.id);
-                        }}
-                      >
-                        <X size={15} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ fontSize: '0.875rem' }}>
+                      {a ? (
+                        <>
+                          <div style={{ fontWeight: 600 }}>{a.siteName}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{a.governorateName}</div>
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {a?.shiftName ?? '—'}
+                    </td>
+                    <td>
+                      {a ? (
+                        <span className={`badge ${statusColor[a.assignmentStatus] ?? 'badge'}`} style={{ fontSize: '0.75rem' }}>
+                          {a.isActive ? <><Check size={11} /> موكّل ونشط</> : a.assignmentStatus === 'Replaced' ? 'مستخلف ومُبدَّل' : 'مجمد وخامل'}
+                        </span>
+                      ) : (
+                        <span className="badge" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          غير معين
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {a && a.isActive ? (
+                        <button
+                          className="btn btn-ghost btn-icon btn-sm"
+                          style={{ color: 'var(--danger)' }}
+                          title="طرد وفسخ العقد الميداني"
+                          onClick={() => {
+                            if (window.confirm(`هل أنت واثق من شطب تكليف الكادر ${inspector.name} من الخدمة في هذا اليوم؟`))
+                              deactivate(a.id);
+                          }}
+                        >
+                          <X size={15} />
+                        </button>
+                      ) : !a ? (
+                        <button
+                          className="btn btn-primary btn-icon btn-sm"
+                          title="تعيين لموقع"
+                          onClick={() => {
+                            setForm(f => ({ ...f, inspectorId: inspector.id }));
+                            setModal(true);
+                          }}
+                        >
+                          <Plus size={15} />
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

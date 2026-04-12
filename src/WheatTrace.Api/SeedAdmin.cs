@@ -11,6 +11,14 @@ public static class SeedAdmin
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<WheatTraceDbContext>();
+        var config = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+        var defaultPassword = config["WHEATTRACE_DEFAULT_PASSWORD"];
+        if (string.IsNullOrWhiteSpace(defaultPassword))
+            throw new InvalidOperationException("WHEATTRACE_DEFAULT_PASSWORD is required for development seeding.");
+
+        var superPassword = config["WHEATTRACE_SUPER_PASSWORD"];
+        if (string.IsNullOrWhiteSpace(superPassword))
+            throw new InvalidOperationException("WHEATTRACE_SUPER_PASSWORD is required for development seeding.");
         
         if (!await db.Users.AnyAsync(u => u.Username == "admin"))
         {
@@ -19,13 +27,13 @@ public static class SeedAdmin
                 Id = Guid.NewGuid(),
                 Name = "مدير النظام",
                 Username = "admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(defaultPassword),
                 Role = UserRole.Admin,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             };
             db.Users.Add(admin);
-            Console.WriteLine("✅ Admin user seeded: admin / admin123");
+            Console.WriteLine("✅ Admin user seeded: admin");
         }
 
         if (!await db.Users.AnyAsync(u => u.Username == "superuser"))
@@ -35,7 +43,7 @@ public static class SeedAdmin
                 Id = Guid.NewGuid(),
                 Name = "SuperUser",
                 Username = "superuser",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("hazem2016"),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(superPassword),
                 Role = UserRole.SuperAdmin,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,

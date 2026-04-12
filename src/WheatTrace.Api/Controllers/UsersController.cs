@@ -44,7 +44,9 @@ public class UsersController : ControllerBase
         // مسؤول المحافظة لا يرى سوى المفتشين لأغراض الانتداب والتكليف
         if (currentUserRole == "GovernorateManager")
         {
-            query = query.Where(u => u.Role == UserRole.Inspector);
+            var currentUserGovIdString = User.Claims.FirstOrDefault(c => c.Type == "governorate_id")?.Value;
+            _ = Guid.TryParse(currentUserGovIdString, out Guid currentUserGovId);
+            query = query.Where(u => u.Role == UserRole.Inspector && u.GovernorateId == currentUserGovId);
         }
 
         // فلترة إضافية حسب الدور إذا طُلبت
@@ -98,12 +100,8 @@ public class UsersController : ControllerBase
         var currentUserGovIdString = User.Claims.FirstOrDefault(c => c.Type == "governorate_id")?.Value;
         _ = Guid.TryParse(currentUserGovIdString, out Guid currentUserGovId);
 
-        // مسؤول المحافظة: يُنشئ مفتشين لمحافظته فقط
-        if (currentUserRole == "GovernorateManager")
-        {
-            if (role != UserRole.Inspector || req.GovernorateId != currentUserGovId)
-                return Forbid();
-        }
+        if (!WheatTrace.Application.Common.Security.RbacHelper.CanManageUser(currentUserRole ?? "", currentUserGovId, role, role, req.GovernorateId))
+            return Forbid();
 
         // إنشاء المستخدم مع تشفير كلمة المرور بـ BCrypt
         var user = new WheatTrace.Domain.Entities.User
@@ -146,20 +144,8 @@ public class UsersController : ControllerBase
         var currentUserGovIdString = User.Claims.FirstOrDefault(c => c.Type == "governorate_id")?.Value;
         _ = Guid.TryParse(currentUserGovIdString, out Guid currentUserGovId);
 
-        // RBAC: مسؤول المحافظة يُعدِّل مفتشي محافظته فقط ولا يستطيع رفع درجتهم
-        if (currentUserRole == "GovernorateManager")
-        {
-            if (user.Role != UserRole.Inspector || user.GovernorateId != currentUserGovId ||
-                role != UserRole.Inspector       || req.GovernorateId  != currentUserGovId)
-                return Forbid();
-        }
-        // RBAC: المراقبون لا يعدِّلون المدراء أو أعلى
-        else if (currentUserRole == "GeneralMonitor" || currentUserRole == "OperationsMonitor")
-        {
-            if (user.Role == UserRole.Admin || user.Role == UserRole.SuperAdmin ||
-                role       == UserRole.Admin || role       == UserRole.SuperAdmin)
-                return Forbid();
-        }
+        if (!WheatTrace.Application.Common.Security.RbacHelper.CanManageUser(currentUserRole ?? "", currentUserGovId, user.Role, role, req.GovernorateId))
+            return Forbid();
 
         // تطبيق التعديلات
         user.Name          = req.Name;
@@ -204,18 +190,8 @@ public class UsersController : ControllerBase
         var currentUserGovIdString = User.Claims.FirstOrDefault(c => c.Type == "governorate_id")?.Value;
         _ = Guid.TryParse(currentUserGovIdString, out Guid currentUserGovId);
 
-        // مسؤول المحافظة يحذف مفتشي محافظته فقط
-        if (currentUserRole == "GovernorateManager")
-        {
-            if (user.Role != UserRole.Inspector || user.GovernorateId != currentUserGovId)
-                return Forbid();
-        }
-        // المراقبون لا يحذفون المدراء أو أعلى
-        else if (currentUserRole == "GeneralMonitor" || currentUserRole == "OperationsMonitor")
-        {
-            if (user.Role == UserRole.Admin || user.Role == UserRole.SuperAdmin)
-                return Forbid();
-        }
+        if (!WheatTrace.Application.Common.Security.RbacHelper.CanManageUser(currentUserRole ?? "", currentUserGovId, user.Role, user.Role, user.GovernorateId))
+            return Forbid();
 
         _db.Users.Remove(user);
         await _db.SaveChangesAsync();

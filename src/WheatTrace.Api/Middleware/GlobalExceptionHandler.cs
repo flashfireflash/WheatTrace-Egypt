@@ -37,8 +37,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         // رسالة آمنة للمستخدم لا تكشف تفاصيل داخلية
         var response = new
         {
-            Message = "حدث خطأ في السيرفر. يرجى المحاولة لاحقاً.",
-            Details = exception.Message
+            Message = "حدث خطأ في السيرفر. يرجى المحاولة لاحقاً."
         };
 
         await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);

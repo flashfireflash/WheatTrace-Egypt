@@ -9,9 +9,10 @@ import InspectorReports from '../../pages/inspector/InspectorReports';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useT } from '../../store/localeStore';
+import { useLocaleStore } from '../../store/localeStore';
 import UserProfileModal from '../ui/UserProfileModal';
 import AnnouncementBanner from '../ui/AnnouncementBanner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * تخطيط واجهة المفتش (Inspector Layout)
@@ -26,7 +27,11 @@ export default function InspectorLayout() {
   // تتبع حالة الاتصال بالشبكة لتعليق العمليات أو المزامنة
   const isOnline = useOnlineStatus();
   const t = useT();
+  const { setLang } = useLocaleStore();
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // المفتش يرى الواجهة بالعربية دائماً بغض النظر عن إعداد اللغة المحفوظ
+  useEffect(() => { setLang('ar'); }, []);
 
   // جلب صندوق الوارد لمعرفة عدد الرسائل غير المقروءة (تشارك الكاش مع شاشة الرسائل)
   const { data: inbox = [] } = useQuery({

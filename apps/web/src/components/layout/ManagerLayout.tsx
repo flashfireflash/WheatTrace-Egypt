@@ -1,38 +1,65 @@
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { LogOut, LayoutDashboard, Users, ClipboardList, FileBarChart } from 'lucide-react';
-import ManagerDashboard from '../../pages/manager/ManagerDashboard';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import api from '../../api/client';
+import {
+  LogOut, LayoutDashboard, Users, ClipboardList, FileBarChart,
+  Database, ArrowLeftRight, ChevronRight, Map, BarChart3, UserPlus
+} from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useT } from '../../store/localeStore';
-import { useState } from 'react';
 import UserProfileModal from '../ui/UserProfileModal';
 
-/**
- * تخطيط واجهة مدير المحافظة (Manager Layout)
- * يتضمن شريطاً جانبياً (Sidebar) ثابتاً مناسباً لأجهزة سطح المكتب واللوحيات.
- * يعرض تفاصيل المحافظة المخصَّصة لهذا المدير لمنع الوصول لبيانات خارج الصلاحية.
- */
+const ManagerDashboard      = lazy(() => import('../../pages/manager/ManagerDashboard'));
+const ManagerSites          = lazy(() => import('../../pages/manager/ManagerSites'));
+const ManagerAssignments    = lazy(() => import('../../pages/manager/ManagerAssignments'));
+const ManagerTransferRequests = lazy(() => import('../../pages/manager/ManagerTransferRequests'));
+const ManagerEntriesGrid    = lazy(() => import('../../pages/manager/ManagerEntriesGrid'));
+const ManagerStockTransfers = lazy(() => import('../../pages/manager/ManagerStockTransfers'));
+const AdminReports          = lazy(() => import('../../pages/admin/AdminReports'));
+const AdminMap              = lazy(() => import('../../pages/admin/AdminMap'));
+const AdminUsers            = lazy(() => import('../../pages/admin/AdminUsers'));
+const DetailedDeliveryReport = lazy(() => import('../../pages/shared/DetailedDeliveryReport'));
+
 export default function ManagerLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const t = useT();
   const [profileOpen, setProfileOpen] = useState(false);
-  // توليد الحرفين الأولين من الاسم للأفاتار النصي إذا لم يكن هناك صورة
   const initials = user?.name?.slice(0, 2) ?? 'مح';
 
-  // روابط القائمة الجانبية الخاصة بمدير المحافظة
+  // شارة طلبات الانتداب الواردة المعلقة
+  const { data: pendingTransfers = 0 } = useQuery<number>({
+    queryKey: ['pending-transfers-count'],
+    queryFn: () => api.get('/assignments/transfer-requests').then(r => {
+      const arr = Array.isArray(r.data) ? r.data : [];
+      return arr.filter((x: any) => x.isIncoming && x.status === 'Pending').length;
+    }),
+    staleTime: 30_000,
+  });
+
+  // الاستماع لمتغيرات التعيينات وتحديث الشارة
+  useEffect(() => {
+    const ev = () => qc.invalidateQueries({ queryKey: ['pending-transfers-count'] });
+    window.addEventListener('TransferRequestUpdated', ev);
+    return () => window.removeEventListener('TransferRequestUpdated', ev);
+  }, [qc]);
+
   const navItems = [
-    { to: '/',           label: t.dashboard,    icon: LayoutDashboard, end: true },
-    { to: '/assignments',label: 'تعيينات المفتشين', icon: Users },
-    { to: '/users',      label: 'إدارة المفتشين', icon: Users },
-    { to: '/entries',    label: 'سجل الكميات',   icon: ClipboardList },
-    { to: '/reports',    label: t.reports,      icon: FileBarChart },
+    { to: '/',          label: 'الصفحة الرئيسية',     icon: LayoutDashboard, end: true },
+    { to: '/map',       label: 'الخريطة التفاعلية',    icon: Map },
+    { to: '/sites',     label: 'مواقع التخزين',        icon: Database },
+    { to: '/users',     label: 'إدارة المفتشين',       icon: UserPlus },
+    { to: '/assignments', label: 'توزيعات المفتشين',   icon: Users },
+    { to: '/transfers', label: 'الانتداب والنقل',       icon: ArrowLeftRight, badge: pendingTransfers },
+    { to: '/entries',   label: 'سجل الكميات',           icon: ClipboardList },
+    { to: '/reports',   label: 'التقارير',               icon: BarChart3 },
   ];
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--bg-base)' }}>
-
-      {/* الشريط الجانبي الثابت (Sidebar) */}
       <aside className="sidebar" style={{ width: 252, flexShrink: 0 }}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-img">
@@ -45,9 +72,8 @@ export default function ManagerLayout() {
         </div>
 
         <nav className="sidebar-nav">
-          {/* تسمية توضح المحافظة التابع لها لدواعٍ أمنية وبصرية */}
           <span className="sidebar-label">{user?.governorateName ?? 'المحافظة'}</span>
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -56,11 +82,21 @@ export default function ManagerLayout() {
             >
               <Icon size={18} strokeWidth={2} />
               {label}
+              <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                {badge ? (
+                  <span style={{
+                    background: '#e65100', color: 'white',
+                    borderRadius: 99, fontSize: '0.7rem', fontWeight: 800,
+                    padding: '0 0.4rem', minWidth: 18, height: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{badge}</span>
+                ) : null}
+                <ChevronRight size={14} style={{ opacity: 0.4 }} />
+              </div>
             </NavLink>
           ))}
         </nav>
 
-        {/* تذييل الشريط الجانبي (المستخدم الحالي وتسجيل الخروج) */}
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="sidebar-user-avatar">{initials}</div>
@@ -79,9 +115,7 @@ export default function ManagerLayout() {
         </div>
       </aside>
 
-      {/* منطقة المحتوى الرئيسية */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* الشريط العلوي */}
         <header className="topbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             <span className="topbar-title">مدير المحافظة</span>
@@ -89,16 +123,14 @@ export default function ManagerLayout() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <ThemeToggle />
-            <div 
+            <div
               onClick={() => setProfileOpen(true)}
               style={{
                 width: 36, height: 36, borderRadius: '50%',
                 background: 'linear-gradient(135deg, var(--brand), var(--brand-light))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'white', fontWeight: 800, fontSize: '0.875rem',
-                cursor: 'pointer',
-                overflow: 'hidden',
-                border: '1px solid rgba(0,0,0,0.1)'
+                cursor: 'pointer', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)'
               }}
               title="تعديل الملف الشخصي"
             >
@@ -107,14 +139,23 @@ export default function ManagerLayout() {
           </div>
         </header>
 
-        {/* نافذة تعديل الحساب (تظهر عند الطلب) */}
         <UserProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
 
-        {/* الحاوية المتغيرة للمحتوى */}
         <main style={{ flex: 1, padding: '1.75rem', overflowY: 'auto', maxWidth: 1400, width: '100%', margin: '0 auto' }}>
-          <Routes>
-            <Route path="/*" element={<ManagerDashboard />} />
-          </Routes>
+          <Suspense fallback={<div style={{ minHeight: 320, display: 'grid', placeItems: 'center', color: 'var(--text-secondary)' }}>جاري تحميل الصفحة...</div>}>
+            <Routes>
+              <Route path="/"           element={<ManagerDashboard />} />
+              <Route path="/*"          element={<ManagerDashboard />} />
+              <Route path="/map"        element={<AdminMap />} />
+              <Route path="/sites"      element={<ManagerSites />} />
+              <Route path="/assignments" element={<ManagerAssignments />} />
+              <Route path="/transfers"  element={<ManagerTransferRequests />} />
+              <Route path="/entries"    element={<ManagerEntriesGrid />} />
+              <Route path="/transfers-stock" element={<ManagerStockTransfers />} />
+              <Route path="/reports"   element={<AdminReports />} />
+              <Route path="/users"     element={<AdminUsers />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </div>

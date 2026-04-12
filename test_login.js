@@ -1,13 +1,21 @@
 const http = require('http');
 
+const baseUrl = new URL(process.env.WHEATTRACE_API_BASE_URL ?? 'http://localhost:5036');
+const username = process.env.WHEATTRACE_USERNAME;
+const password = process.env.WHEATTRACE_PASSWORD;
+
+if (!username || !password) {
+  throw new Error('Set WHEATTRACE_USERNAME and WHEATTRACE_PASSWORD before running this script.');
+}
+
 const reqData = JSON.stringify({
-  username: "inspector",
-  password: "inspector123"
+  username,
+  password
 });
 
 const req = http.request({
-  hostname: 'localhost',
-  port: 5036,
+  hostname: baseUrl.hostname,
+  port: baseUrl.port,
   path: '/api/auth/login',
   method: 'POST',
   headers: {

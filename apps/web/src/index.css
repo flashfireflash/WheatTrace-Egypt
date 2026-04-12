@@ -534,6 +534,24 @@ a { text-decoration: none; color: inherit; }
 .input-error { border-color: var(--danger) !important; }
 .input-error:focus { box-shadow: 0 0 0 4px rgba(220,38,38,0.12); }
 
+/* Fix Webkit autofill background rendering bug */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover, 
+.input:-webkit-autofill:focus, 
+.input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 40px #f1f5f9 inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    border: 2px solid transparent !important;
+}
+
+[data-theme="dark"] .input:-webkit-autofill,
+[data-theme="dark"] .input:-webkit-autofill:hover, 
+[data-theme="dark"] .input:-webkit-autofill:focus, 
+[data-theme="dark"] .input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 40px var(--surface-1) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+}
+
 /* Qty Stepper */
 .qty-stepper {
   display: flex;

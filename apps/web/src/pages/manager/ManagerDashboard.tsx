@@ -1,17 +1,17 @@
 import { lazy, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Routes, Route, Link } from 'react-router-dom';
-import { FileEdit, ArrowLeftRight, TrendingUp, AlertTriangle, Users, ClipboardList, MapPin, Activity, RefreshCw, Wheat } from 'lucide-react';
+import { FileEdit, ArrowLeftRight, TrendingUp, AlertTriangle, Users, ClipboardList, Activity, RefreshCw, Wheat } from 'lucide-react';
+
 import api from '../../api/client';
-import ManagerApprovals from './ManagerApprovals';
-import ManagerAssignments from './ManagerAssignments';
-import ManagerEntriesGrid from './ManagerEntriesGrid';
-import ManagerStockTransfers from './ManagerStockTransfers';
-import AdminUsers from '../admin/AdminUsers';
-import AdminReports from '../admin/AdminReports';
 import { useLiveUpdates } from '../../hooks/useLiveUpdates';
 
-const InteractiveMap = lazy(() => import('../../components/ui/InteractiveMap'));
+const ManagerApprovals = lazy(() => import('./ManagerApprovals'));
+const ManagerAssignments = lazy(() => import('./ManagerAssignments'));
+const ManagerEntriesGrid = lazy(() => import('./ManagerEntriesGrid'));
+const ManagerStockTransfers = lazy(() => import('./ManagerStockTransfers'));
+const AdminUsers = lazy(() => import('../admin/AdminUsers'));
+const AdminReports = lazy(() => import('../admin/AdminReports'));
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
@@ -20,15 +20,17 @@ const InteractiveMap = lazy(() => import('../../components/ui/InteractiveMap'));
  */
 export default function ManagerDashboardRouter() {
   return (
-    <Routes>
-      <Route path="/" element={<ManagerDashboard />} />
-      <Route path="/approvals"   element={<ManagerApprovals />} />
-      <Route path="/assignments" element={<ManagerAssignments />} />
-      <Route path="/entries"     element={<ManagerEntriesGrid />} />
-      <Route path="/transfers"   element={<ManagerStockTransfers />} />
-      <Route path="/users"       element={<AdminUsers />} />
-      <Route path="/reports"     element={<AdminReports />} />
-    </Routes>
+    <Suspense fallback={<div style={{ minHeight: 320, display: 'grid', placeItems: 'center', color: 'var(--text-secondary)' }}>جاري تحميل الصفحة...</div>}>
+      <Routes>
+        <Route path="/" element={<ManagerDashboard />} />
+        <Route path="/approvals"   element={<ManagerApprovals />} />
+        <Route path="/assignments" element={<ManagerAssignments />} />
+        <Route path="/entries"     element={<ManagerEntriesGrid />} />
+        <Route path="/transfers"   element={<ManagerStockTransfers />} />
+        <Route path="/users"       element={<AdminUsers />} />
+        <Route path="/reports"     element={<AdminReports />} />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -64,7 +66,7 @@ function ManagerDashboard() {
       (gov.authorities ?? []).forEach((auth: any) => {
         (auth.sites ?? []).forEach((ts: any) => {
           if (String(ts.id ?? ts.Id) === String(s.id)) {
-            totalReceivedKg =
+            totalReceivedKg = ts.totalReceivedKg ?? ts.TotalReceivedKg ??
               ((ts.w22_5Ton ?? ts.W22_5Ton ?? 0) * 1000 + (ts.w22_5Kg ?? ts.W22_5Kg ?? 0)) +
               ((ts.w23Ton   ?? ts.W23Ton   ?? 0) * 1000 + (ts.w23Kg   ?? ts.W23Kg   ?? 0)) +
               ((ts.w23_5Ton ?? ts.W23_5Ton ?? 0) * 1000 + (ts.w23_5Kg ?? ts.W23_5Kg ?? 0));
@@ -183,7 +185,7 @@ function ManagerDashboard() {
               <ClipboardList size={24} color="var(--success)" />
             </div>
             <div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>الدفتر الاستلامي</div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>دفتر الاستلام</div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>مراجعة إدخالات جميع المواقع</div>
             </div>
           </div>
@@ -202,16 +204,6 @@ function ManagerDashboard() {
         </Link>
       </div>
 
-      {/* ── الخريطة التفاعلية ── */}
-      <div className="card fade-in" style={{ padding: '0.875rem 1rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-          <MapPin size={18} style={{ color: 'var(--brand)', marginLeft: '0.5rem', verticalAlign: 'middle' }} />
-          الخريطة التفاعلية للمواقع النشطة
-        </h3>
-        <Suspense fallback={<div style={{ height: 400, background: 'var(--surface-2)', borderRadius: 'var(--r-md)', animation: 'pulse-soft 1.5s infinite' }} />}>
-          <InteractiveMap sites={sites} />
-        </Suspense>
-      </div>
 
     </div>
   );
@@ -223,6 +215,7 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
   let w22_5Ton = 0, w22_5Kg = 0;
   let w23Ton = 0, w23Kg = 0;
   let w23_5Ton = 0, w23_5Kg = 0;
+  let totalReceivedAll = 0;
 
   data.forEach((gov: any) => {
     gov.authorities?.forEach((auth: any) => {
@@ -230,11 +223,12 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
         w22_5Kg += (s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0);
         w23Kg   += (s.w23Ton   || 0) * 1000 + (s.w23Kg   || 0);
         w23_5Kg += (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0);
+        totalReceivedAll += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
       });
     });
   });
 
-  gKg = w22_5Kg + w23Kg + w23_5Kg;
+  gKg = totalReceivedAll > 0 ? totalReceivedAll : (w22_5Kg + w23Kg + w23_5Kg);
   gTon     = Math.floor(gKg / 1000);    gKg     = gKg     % 1000;
   w22_5Ton = Math.floor(w22_5Kg / 1000); w22_5Kg = w22_5Kg % 1000;
   w23Ton   = Math.floor(w23Kg / 1000);   w23Kg   = w23Kg   % 1000;

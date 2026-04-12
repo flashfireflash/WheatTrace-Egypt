@@ -52,6 +52,18 @@ public class DailyEntry : BaseEntity
     public string? Notes { get; set; }
 
     /// <summary>
+    /// علامة تشير إلى أن مدير المحافظة طلب تعديل هذا السجل وتمت الموافقة عليه من مراقب العمليات.
+    /// تُعرض على الواجهة كـ badge تحذيري لتنبيه الجميع بوجود تعديل.
+    /// </summary>
+    public bool IsEditedByManager { get; set; } = false;
+
+    // ملاحظة المدير عند طلب التعديل (سبب التعديل)
+    public string? ManagerEditNote { get; set; }
+
+    // تاريخ آخر تعديل معتمد من مراقب العمليات
+    public DateTime? EditApprovedAt { get; set; }
+
+    /// <summary>
     /// رمز إصدار السجل (Optimistic Concurrency) - يمنع الكتابة المتضاربة من جهازَين في نفس الوقت.
     /// تُديره قاعدة البيانات تلقائياً وتُحدَّث عند كل تعديل.
     /// </summary>

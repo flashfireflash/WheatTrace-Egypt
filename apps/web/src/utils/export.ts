@@ -1,5 +1,3 @@
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
 
 /**
@@ -27,6 +25,10 @@ export async function exportToStyledExcel(
 ) {
   // لا نُنشئ ملفاً فارغاً (ضمان جودة المخرجات)
   if (!data || !data.length) return;
+
+  // التحميل الكسول (Lazy Loading) لمكتبات التصدير لتقليل حجم الحزمة الابتدائية (Bundle Size)
+  const ExcelJS = (await import('exceljs')).default;
+  const { saveAs } = await import('file-saver');
 
   const workbook  = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('التقرير');

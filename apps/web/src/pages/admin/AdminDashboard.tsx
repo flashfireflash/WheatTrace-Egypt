@@ -43,24 +43,36 @@ export default function AdminDashboard() {
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [sites, users, dailySummary] = await Promise.all([
+      const [sites, users, dailySummary, detailedTotals] = await Promise.all([
         api.get('/storage-sites').catch(() => ({ data: [] })),
         api.get('/users').catch(() => ({ data: [] })),
-        // جلب المرفوضات الحقيقية: TotalRejectionTon لا يُخصم منه TreatedQuantityTon
         api.get('/reports/daily-summary', { params: { date: today } }).catch(() => ({ data: {} })),
+        api.get('/reports/detailed-totals').catch(() => ({ data: [] })),
       ]);
       const sitesArr = Array.isArray(sites.data) ? sites.data : (sites.data?.items ?? []);
       const usersArr = Array.isArray(users.data) ? users.data : (users.data?.items ?? []);
+      const totalsArr: any[] = Array.isArray(detailedTotals.data) ? detailedTotals.data : [];
+
+      // الإجمالي الحقيقي من TotalReceivedKg، وليس من CurrentStockKg العشوائي
+      let totalReceivedKg = 0;
+      totalsArr.forEach((gov: any) => {
+        gov.authorities?.forEach((auth: any) => {
+          auth.sites?.forEach((s: any) => {
+            totalReceivedKg += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
+          });
+        });
+      });
+
       return {
         totalSites: sitesArr.length,
         activeSitesToday: sitesArr.filter((s: any) => s.status === 'Active').length,
-        totalReceivedTons: sitesArr.reduce((a: number, s: any) => a + Math.floor((s.currentStockKg ?? 0) / 1000), 0),
+        totalReceivedTons: Math.floor(totalReceivedKg / 1000),
         totalRejections: dailySummary.data?.totalRejectionsTon ?? 0,
         totalUsers: usersArr.length,
         recentEntries: [],
       };
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
   });
 
   const now = new Date();
@@ -160,7 +172,7 @@ export default function AdminDashboard() {
         <div className="section-header">
           <h3 className="section-title"><Activity size={18} />إحصائيات سريعة</h3>
         </div>
-        <FullStatsWidget isNational={user?.role === 'Admin' || user?.role === 'GeneralMonitor'} />
+        <FullStatsWidget isNational={user?.role === 'Admin' || user?.role === 'GeneralMonitor' || user?.role === 'OperationsMonitor'} />
       </div>
 
     </div>
@@ -253,7 +265,7 @@ function ManagerSummaryWidget({ isNational }: { isNational: boolean }) {
     const authMap = new Map<string, { name: string, gov: string, totalTon: number, rejectedTon: number, sites: number }>();
     data.forEach((gov: any) => {
       gov.authorities.forEach((auth: any) => {
-        const totKg = auth.sites.reduce((a: number, s: any) => a + ((s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0) + (s.w23Ton || 0) * 1000 + (s.w23Kg || 0) + (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0)), 0);
+        const totKg = auth.sites.reduce((a: number, s: any) => a + (s.totalReceivedKg ?? s.TotalReceivedKg ?? ((s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0) + (s.w23Ton || 0) * 1000 + (s.w23Kg || 0) + (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0))), 0);
         const tot = Math.floor(totKg / 1000);
         const rej = auth.sites.reduce((a: number, s: any) => a + (s.rejectedTon || 0), 0);
         const key = auth.authority;
@@ -332,7 +344,7 @@ function ManagerSummaryWidget({ isNational }: { isNational: boolean }) {
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.875rem' }}>
         {gov.authorities.map((auth: any, i: number) => {
-          const totKg = auth.sites.reduce((acc: number, s: any) => acc + ((s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0) + (s.w23Ton || 0) * 1000 + (s.w23Kg || 0) + (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0)), 0);
+          const totKg = auth.sites.reduce((acc: number, s: any) => acc + (s.totalReceivedKg ?? s.TotalReceivedKg ?? ((s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0) + (s.w23Ton || 0) * 1000 + (s.w23Kg || 0) + (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0))), 0);
           const tot = Math.floor(totKg / 1000);
           const rej = auth.sites.reduce((acc: number, s: any) => acc + (s.rejectedTon || 0), 0);
           return (
@@ -384,17 +396,20 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
   let w23Ton = 0, w23Kg = 0;
   let w23_5Ton = 0, w23_5Kg = 0;
 
+  let totalReceivedAll = 0;
+
   data.forEach((gov: any) => {
     gov.authorities?.forEach((auth: any) => {
       auth.sites?.forEach((s: any) => {
         w22_5Kg += (s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0);
         w23Kg   += (s.w23Ton   || 0) * 1000 + (s.w23Kg   || 0);
         w23_5Kg += (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0);
+        totalReceivedAll += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
       });
     });
   });
 
-  gKg = w22_5Kg + w23Kg + w23_5Kg;
+  gKg = totalReceivedAll > 0 ? totalReceivedAll : (w22_5Kg + w23Kg + w23_5Kg);
   gTon    = Math.floor(gKg / 1000);    gKg    = gKg    % 1000;
   w22_5Ton = Math.floor(w22_5Kg / 1000); w22_5Kg = w22_5Kg % 1000;
   w23Ton   = Math.floor(w23Kg / 1000);   w23Kg   = w23Kg   % 1000;

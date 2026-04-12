@@ -13,29 +13,30 @@ interface InspectorDayData {
   shiftId: string | null;
 }
 
-export default function AdminReportsInspectorDays() {
+export default function AdminReportsInspectorDays({ fixedGovId }: { fixedGovId?: string }) {
   const { user } = useAuthStore();
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
   );
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [countShiftAsFullDay, setCountShiftAsFullDay] = useState(false);
-  const [governorateId, setGovId] = useState('');
+  const [governorateId, setGovId] = useState(fixedGovId ?? '');
+  const effectiveGovId = fixedGovId ?? governorateId;
   const [authorityId, setAuthId] = useState('');
   const [siteId, setSiteId] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data: governorates = [] } = useQuery({ queryKey: ['govs'], queryFn: () => api.get('/governorates').then(r => r.data) });
+  const { data: governorates = [] } = useQuery({ queryKey: ['govs'], queryFn: () => api.get('/governorates').then(r => r.data), enabled: !fixedGovId });
   const { data: authorities = [] } = useQuery({ queryKey: ['auths'], queryFn: () => api.get('/authorities').then(r => r.data) });
   const { data: sites = [] } = useQuery({
-    queryKey: ['sites', governorateId, authorityId],
-    queryFn: () => api.get('/storage-sites', { params: { governorateId: governorateId || undefined, authorityId: authorityId || undefined } }).then(r => r.data)
+    queryKey: ['sites', effectiveGovId, authorityId],
+    queryFn: () => api.get('/storage-sites', { params: { governorateId: effectiveGovId || undefined, authorityId: authorityId || undefined } }).then(r => r.data)
   });
 
   const { data = [], isLoading } = useQuery<InspectorDayData[]>({
-    queryKey: ['inspector-days', startDate, endDate, governorateId, authorityId, siteId],
+    queryKey: ['inspector-days', startDate, endDate, effectiveGovId, authorityId, siteId],
     queryFn: () => api.get('/reports/inspector-days', {
-      params: { startDate, endDate, governorateId: governorateId || undefined, authorityId: authorityId || undefined, siteId: siteId || undefined }
+      params: { startDate, endDate, governorateId: effectiveGovId || undefined, authorityId: authorityId || undefined, siteId: siteId || undefined }
     }).then(r => r.data)
   });
 
@@ -102,7 +103,7 @@ export default function AdminReportsInspectorDays() {
           <input type="date" className="input" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
         <div style={{ display: 'flex', gap: '1rem', flex: 1, flexWrap: 'wrap' }}>
-          {user?.role !== 'GovernorateManager' && (
+          {(!fixedGovId && user?.role !== 'GovernorateManager') && (
             <div style={{ flex: 1, minWidth: 150 }}>
               <label className="input-label" style={{ fontSize: '0.8rem' }}>المحافظة</label>
               <select className="input" value={governorateId} onChange={e => setGovId(e.target.value)}>

@@ -112,8 +112,8 @@ public class DailyEntriesController : ControllerBase
             .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", assignment.SiteId)
             .FirstAsync();
 
-        if (site.CurrentStockKg + totalKg > site.CapacityKg)
-            return BadRequest(new { message = $"الكمية تتجاوز الطاقة التخزينية المتاحة. المتبقي: {site.CapacityKg - site.CurrentStockKg} كجم" });
+        try { site.ApplyTransaction(totalKg, true); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
 
         // 6. Persist
         var entry = new DailyEntry
@@ -133,7 +133,6 @@ public class DailyEntriesController : ControllerBase
         };
 
         _db.DailyEntries.Add(entry);
-        site.CurrentStockKg += totalKg;
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
 
@@ -176,8 +175,8 @@ public class DailyEntriesController : ControllerBase
             .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", entry.SiteId)
             .FirstAsync();
 
-        if (site.CurrentStockKg + delta > site.CapacityKg)
-            return BadRequest(new { message = "الكمية الجديدة تتجاوز الطاقة التخزينية" });
+        try { site.ApplyTransaction(delta, true); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
 
         var old = new { entry.Wheat22_5Ton, entry.Wheat22_5Kg, entry.Wheat23Ton, entry.Wheat23Kg, entry.Wheat23_5Ton, entry.Wheat23_5Kg };
 
@@ -189,8 +188,6 @@ public class DailyEntriesController : ControllerBase
         entry.Wheat23_5Kg  = request.Wheat23_5.Kg;
         entry.Notes        = request.Notes;
         entry.UpdatedAt    = DateTime.UtcNow;
-
-        site.CurrentStockKg += delta;
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
 
@@ -239,6 +236,55 @@ public class DailyEntriesController : ControllerBase
             await _hubContext.Clients.Group($"Governorate-{govId}").SendAsync("EditRequestPending");
 
         return Ok(new { message = "تم إرسال طلب التعديل للمسؤول" });
+    }
+
+    /// <summary>
+    /// GovernorateManager: يرفع طلب تعديل كمية — يُوجَّه للموافقة من مراقب العمليات.
+    /// </summary>
+    [HttpPost("{id:guid}/manager-edit-request")]
+    [Authorize(Policy = "ManagerOrAbove")]
+    public async Task<ActionResult> ManagerRequestEdit(Guid id, [FromBody] ManagerEditRequestBody request)
+    {
+        var entry = await _db.DailyEntries.Include(e => e.Site).FirstOrDefaultAsync(e => e.Id == id);
+        if (entry is null) return NotFound();
+
+        // المدير يقدر يطلب تعديل لمواقع محافظته فقط
+        if (_currentUser.Role == "GovernorateManager" &&
+            entry.Site?.GovernorateId != _currentUser.GovernorateId)
+            return Forbid();
+
+        // لا يُسمح بطلب تعديل معلق على نفس السجل بالفعل
+        var hasPending = await _db.EditRequests.AnyAsync(r =>
+            r.EntryId == id &&
+            r.Status == RequestStatus.Pending);
+        if (hasPending)
+            return BadRequest(new { message = "يوجد طلب تعديل معلق بالفعل لهذا السجل" });
+
+        var editReq = new EditRequest
+        {
+            Id              = Guid.NewGuid(),
+            EntryId         = id,
+            RequestedById   = _currentUser.UserId,
+            RequestedByRole = _currentUser.Role,
+            EditReason      = request.Reason,
+            NewWheat22_5    = request.NewWheat22_5 is null ? null : (decimal?)(request.NewWheat22_5.Ton * 1000 + request.NewWheat22_5.Kg),
+            NewWheat23      = request.NewWheat23   is null ? null : (decimal?)(request.NewWheat23.Ton   * 1000 + request.NewWheat23.Kg),
+            NewWheat23_5    = request.NewWheat23_5 is null ? null : (decimal?)(request.NewWheat23_5.Ton * 1000 + request.NewWheat23_5.Kg),
+        };
+
+        _db.EditRequests.Add(editReq);
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync("ManagerEditRequest", "EditRequest", editReq.Id);
+
+        // 🔔 إشعار عبر SignalR لكل مراقبي العمليات
+        await _hubContext.Clients.Group("Monitor-All").SendAsync("ManagerEditRequestPending", new
+        {
+            siteName      = entry.Site?.Name,
+            entryDate     = entry.Date,
+            requestedBy   = _currentUser.UserId
+        });
+
+        return Ok(new { message = "تم إرسال طلب التعديل لمراقب العمليات للموافقة" });
     }
 
     /// <summary>Manager: list pending edit requests for their scope.</summary>
@@ -306,11 +352,37 @@ public class DailyEntriesController : ControllerBase
         if (req.Status != RequestStatus.Pending)
             return BadRequest(new { message = "تم معالجة هذا الطلب مسبقاً" });
 
-        if (_currentUser.Role == "GovernorateManager" &&
-            req.Entry!.Site!.GovernorateId != _currentUser.GovernorateId)
-            return Forbid();
+        // التحقق من صلاحية الموافقة:
+        // - طلب المفتش: يوافق مدير المحافظة أو أعلى
+        // - طلب المدير: يوافق مراقب العمليات أو أعلى
+        if (req.RequestedByRole == "GovernorateManager")
+        {
+            var canApprove = _currentUser.Role is "Monitor" or "GeneralMonitor" or "Admin";
+            if (!canApprove) return Forbid();
+        }
+        else
+        {
+            if (!WheatTrace.Application.Common.Security.RbacHelper.CanAccessSite(
+                _currentUser.Role, _currentUser.GovernorateId, req.Entry!.Site!.GovernorateId))
+                return Forbid();
+        }
 
         var entry = req.Entry!;
+        var oldTotalKg = entry.TotalQtyKg;
+        var newWheat22_5Kg = req.NewWheat22_5.HasValue ? (long)req.NewWheat22_5.Value : (long)entry.Wheat22_5Ton * 1000 + entry.Wheat22_5Kg;
+        var newWheat23Kg = req.NewWheat23.HasValue ? (long)req.NewWheat23.Value : (long)entry.Wheat23Ton * 1000 + entry.Wheat23Kg;
+        var newWheat23_5Kg = req.NewWheat23_5.HasValue ? (long)req.NewWheat23_5.Value : (long)entry.Wheat23_5Ton * 1000 + entry.Wheat23_5Kg;
+        var newTotalKg = newWheat22_5Kg + newWheat23Kg + newWheat23_5Kg;
+        var delta = newTotalKg - oldTotalKg;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        var site = await _db.StorageSites
+            .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", entry.SiteId)
+            .FirstAsync();
+
+        try { site.ApplyTransaction(delta, true); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+
         // Apply the new values (keep old value if not provided in request)
         if (req.NewWheat22_5.HasValue) { entry.Wheat22_5Ton = (int)(req.NewWheat22_5.Value / 1000); entry.Wheat22_5Kg = (int)(req.NewWheat22_5.Value % 1000); }
         if (req.NewWheat23.HasValue)   { entry.Wheat23Ton   = (int)(req.NewWheat23.Value   / 1000); entry.Wheat23Kg   = (int)(req.NewWheat23.Value   % 1000); }
@@ -318,12 +390,20 @@ public class DailyEntriesController : ControllerBase
 
         entry.UpdatedAt = DateTime.UtcNow;
 
+        // إذا كان المُعدِّل هو المدير → نضع العلامة البصرية على السجل
+        if (req.RequestedByRole == "GovernorateManager")
+        {
+            entry.IsEditedByManager = true;
+            entry.ManagerEditNote   = req.EditReason;
+            entry.EditApprovedAt    = DateTime.UtcNow;
+        }
+
         req.Status     = RequestStatus.Approved;
         req.ApprovedById = _currentUser.UserId;
         req.ApprovedAt   = DateTime.UtcNow;
 
         // 🔔 Notify inspector via InspectorMessage
-        var siteId = req.Entry.SiteId;
+        var siteId = entry.SiteId;
         _db.InspectorMessages.Add(new Domain.Entities.InspectorMessage
         {
             Id = Guid.NewGuid(),
@@ -336,6 +416,7 @@ public class DailyEntriesController : ControllerBase
         });
 
         await _db.SaveChangesAsync();
+        await tx.CommitAsync();
         await _audit.LogAsync("ApproveEditRequest", "EditRequest", requestId);
         await EmitLiveUpdate(req.Entry.Site?.GovernorateId);
 
@@ -355,9 +436,18 @@ public class DailyEntriesController : ControllerBase
         if (req.Status != RequestStatus.Pending)
             return BadRequest(new { message = "تم معالجة هذا الطلب مسبقاً" });
 
-        if (_currentUser.Role == "GovernorateManager" &&
-            req.Entry!.Site!.GovernorateId != _currentUser.GovernorateId)
-            return Forbid();
+        // نفس منطق الموافقة — طلب المدير ← مراقب العمليات، طلب المفتش ← المدير
+        if (req.RequestedByRole == "GovernorateManager")
+        {
+            var canReject = _currentUser.Role is "Monitor" or "GeneralMonitor" or "Admin";
+            if (!canReject) return Forbid();
+        }
+        else
+        {
+            if (!WheatTrace.Application.Common.Security.RbacHelper.CanAccessSite(
+                _currentUser.Role, _currentUser.GovernorateId, req.Entry!.Site!.GovernorateId))
+                return Forbid();
+        }
 
         req.Status          = RequestStatus.Rejected;
         req.RejectionReason = body.Reason;
@@ -439,6 +529,12 @@ public class DailyEntriesController : ControllerBase
                 continue;
             }
 
+            if (assignment.Site!.IsShiftEnabled && assignment.ShiftId is null)
+            {
+                results.Add(new SyncBatchResult(false, null, "الموقع يعمل بنظام الشفتات ولا يوجد شفت مرتبط بتعيينك"));
+                continue;
+            }
+
             // Holiday check
             if (await _holidays.IsHolidayAsync(item.Date, assignment.SiteId, assignment.Site?.GovernorateId))
             {
@@ -464,9 +560,13 @@ public class DailyEntriesController : ControllerBase
                     .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", assignment.SiteId)
                     .FirstAsync();
 
-                if (site.CurrentStockKg + totalKg > site.CapacityKg)
-                {
-                    results.Add(new SyncBatchResult(false, null, "تجاوز الطاقة التخزينية"));
+                try 
+                { 
+                    site.ApplyTransaction(totalKg, true); 
+                }
+                catch (InvalidOperationException ex) 
+                { 
+                    results.Add(new SyncBatchResult(false, null, ex.Message));
                     continue;
                 }
 
@@ -482,7 +582,6 @@ public class DailyEntriesController : ControllerBase
                 };
 
                 _db.DailyEntries.Add(entry);
-                site.CurrentStockKg += totalKg;
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
                 results.Add(new SyncBatchResult(true, entry.Id, null));
@@ -490,8 +589,14 @@ public class DailyEntriesController : ControllerBase
             else
             {
                 // Update if still within edit window
-                var existing = await _db.DailyEntries.FindAsync(item.ExistingEntryId);
+                var existing = await _db.DailyEntries.FirstOrDefaultAsync(e => e.Id == item.ExistingEntryId);
                 if (existing is null) { results.Add(new SyncBatchResult(false, null, "التسجيل غير موجود")); continue; }
+                if (existing.InspectorId != _currentUser.UserId) { results.Add(new SyncBatchResult(false, existing.Id, "غير مصرح لك بتعديل هذا التسجيل")); continue; }
+                if (existing.SiteId != assignment.SiteId || existing.Date != item.Date || existing.ShiftId != assignment.ShiftId)
+                {
+                    results.Add(new SyncBatchResult(false, existing.Id, "التسجيل لا يطابق التعيين النشط الحالي"));
+                    continue;
+                }
                 if (existing.RowVersion is not null && BitConverter.ToInt64(existing.RowVersion) != item.RowVersion)
                 {
                     results.Add(new SyncBatchResult(false, existing.Id, "تعارض في البيانات - تم تعديل التسجيل مؤخراً"));
@@ -503,11 +608,30 @@ public class DailyEntriesController : ControllerBase
                     continue;
                 }
 
+                var oldTotalKg = existing.TotalQtyKg;
+                var delta = totalKg - oldTotalKg;
+
+                await using var tx = await _db.Database.BeginTransactionAsync();
+                var site = await _db.StorageSites
+                    .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", existing.SiteId)
+                    .FirstAsync();
+
+                try 
+                { 
+                    site.ApplyTransaction(delta, true); 
+                }
+                catch (InvalidOperationException ex) 
+                { 
+                    results.Add(new SyncBatchResult(false, existing.Id, ex.Message));
+                    continue;
+                }
+
                 existing.Wheat22_5Ton = item.Wheat22_5.Ton; existing.Wheat22_5Kg = item.Wheat22_5.Kg;
                 existing.Wheat23Ton   = item.Wheat23.Ton;   existing.Wheat23Kg   = item.Wheat23.Kg;
                 existing.Wheat23_5Ton = item.Wheat23_5.Ton; existing.Wheat23_5Kg = item.Wheat23_5.Kg;
                 existing.Notes = item.Notes; existing.UpdatedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
+                await tx.CommitAsync();
                 results.Add(new SyncBatchResult(true, existing.Id, null));
             }
         }
@@ -555,6 +679,9 @@ public class DailyEntriesController : ControllerBase
             TotalDisplay: FormatTotalDisplay(e.TotalQtyKg),
             Notes: e.Notes,
             IsEditable: isEditable,
+            IsEditedByManager: e.IsEditedByManager,
+            ManagerEditNote: e.ManagerEditNote,
+            EditApprovedAt: e.EditApprovedAt,
             Rejection: e.Rejection is null ? null : new RejectionDto(
                 e.Rejection.Id,
                 e.Rejection.TotalRejectionTon,
@@ -569,3 +696,11 @@ public class DailyEntriesController : ControllerBase
 }
 
 public record RejectEditRequestBody(string? Reason);
+
+/// <summary>طلب تعديل كمية من مدير المحافظة — يحتاج موافقة مراقب العمليات</summary>
+public record ManagerEditRequestBody(
+    string? Reason,
+    GradeQuantityDto? NewWheat22_5,
+    GradeQuantityDto? NewWheat23,
+    GradeQuantityDto? NewWheat23_5
+);

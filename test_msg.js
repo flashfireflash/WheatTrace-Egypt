@@ -1,14 +1,23 @@
 const http = require('http');
 
+const baseUrl = new URL(process.env.WHEATTRACE_API_BASE_URL ?? 'http://localhost:5036');
+const username = process.env.WHEATTRACE_USERNAME;
+const password = process.env.WHEATTRACE_PASSWORD;
+const inspectorId = process.env.WHEATTRACE_INSPECTOR_ID;
+
+if (!username || !password || !inspectorId) {
+  throw new Error('Set WHEATTRACE_USERNAME, WHEATTRACE_PASSWORD, and WHEATTRACE_INSPECTOR_ID before running this script.');
+}
+
 async function testMessages() {
   const reqData = JSON.stringify({
-    username: "admin",
-    password: "admin123"
+    username,
+    password
   });
 
   const req = http.request({
-    hostname: 'localhost',
-    port: 5036,
+    hostname: baseUrl.hostname,
+    port: baseUrl.port,
     path: '/api/auth/login',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
@@ -28,13 +37,13 @@ async function testMessages() {
 
 function sendMessage(token) {
   const payload = JSON.stringify({
-    inspectorId: "0e398363-ae7c-4053-8bbb-a844f58ff1b1", // inspector1
+    inspectorId,
     message: "Test message"
   });
 
   const req = http.request({
-    hostname: 'localhost',
-    port: 5036,
+    hostname: baseUrl.hostname,
+    port: baseUrl.port,
     path: '/api/messages',
     method: 'POST',
     headers: {

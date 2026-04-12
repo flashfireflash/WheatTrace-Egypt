@@ -62,6 +62,7 @@ public class StorageSitesController : ControllerBase
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (site is null) return NotFound();
+        if (!CanAccessGovernorate(site.GovernorateId)) return Forbid();
 
         // Transfer totals
         var outKg = await _db.StockTransfers.Where(t => t.FromSiteId == id).SumAsync(t => (long?)t.TransferQtyKg) ?? 0;
@@ -171,13 +172,16 @@ public class StorageSitesController : ControllerBase
     {
         var site = await _db.StorageSites.FindAsync(id);
         if (site is null) return NotFound();
+        if (!CanAccessGovernorate(site.GovernorateId)) return Forbid();
+
+        var eventType = site.Status == SiteStatus.Suspended ? SiteEventType.Resumed : SiteEventType.Opened;
         if (site.Status == SiteStatus.Active)
             return BadRequest(new { message = "الموقع مفتوح بالفعل" });
 
         var evt = new SiteLifecycleEvent
         {
             SiteId = id,
-            EventType = site.Status == SiteStatus.Suspended ? SiteEventType.Resumed : SiteEventType.Opened,
+            EventType = eventType,
             EventDate = request.EventDate,
             Reason = request.Reason,
             RecordedById = _cu.UserId,
@@ -191,7 +195,7 @@ public class StorageSitesController : ControllerBase
         await _db.SaveChangesAsync();
         await _audit.LogAsync("Open", "StorageSite", id, newValues: new { evt.EventType, evt.EventDate });
 
-        await NotifySiteInspectors(id, $"📢 تم {((site.Status == SiteStatus.Suspended) ? "استئناف" : "افتتاح")} العمل بموقع '{site.Name}' اعتباراً من {evt.EventDate:yyyy-MM-dd}. برجاء التوجه لمقر العمل لاستئناف الاستلام.");
+        await NotifySiteInspectors(id, $"📢 تم {(eventType == SiteEventType.Resumed ? "استئناف" : "افتتاح")} العمل بموقع '{site.Name}' اعتباراً من {evt.EventDate:yyyy-MM-dd}. برجاء التوجه لمقر العمل لاستئناف الاستلام.");
 
         return Ok(new { message = "تم فتح الموقع التخزيني", eventType = evt.EventType.ToString() });
     }
@@ -207,6 +211,7 @@ public class StorageSitesController : ControllerBase
     {
         var site = await _db.StorageSites.FindAsync(id);
         if (site is null) return NotFound();
+        if (!CanAccessGovernorate(site.GovernorateId)) return Forbid();
         if (site.Status == SiteStatus.Closed)
             return BadRequest(new { message = "الموقع مغلق بالفعل" });
 
@@ -269,6 +274,7 @@ public class StorageSitesController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (fromSite is null) return NotFound(new { message = "الموقع المصدر غير موجود" });
+        if (!CanAccessGovernorate(fromSite.GovernorateId)) return Forbid();
 
         StorageSite? toSite = null;
         if (request.ToSiteId.HasValue)
@@ -278,6 +284,8 @@ public class StorageSitesController : ControllerBase
                 .FirstOrDefaultAsync();
 
             if (toSite is null) return NotFound(new { message = "الموقع الهدف غير موجود" });
+            if (_cu.Role == "GovernorateManager" && toSite.GovernorateId != _cu.GovernorateId)
+                return Forbid();
         }
 
         // Rule 2: sufficient stock at source
@@ -314,14 +322,21 @@ public class StorageSitesController : ControllerBase
             TriggerEventId      = request.TriggerEventId
         };
 
-        // Adjust current stock (total_received_kg stays unchanged)
-        fromSite.CurrentStockKg -= request.TransferQtyKg;
-        fromSite.UpdatedAt = DateTime.UtcNow;
-
-        if (toSite != null)
+        // Adjust current stock using Domain Logic (Enforces rules centrally)
+        try 
         {
-            toSite.CurrentStockKg += request.TransferQtyKg;
-            toSite.UpdatedAt = DateTime.UtcNow;
+            fromSite.ApplyOutboundTransfer(request.TransferQtyKg);
+            fromSite.UpdatedAt = DateTime.UtcNow;
+
+            if (toSite != null)
+            {
+                toSite.ApplyInboundTransfer(request.TransferQtyKg);
+                toSite.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
 
         _db.StockTransfers.Add(transfer);
@@ -349,6 +364,10 @@ public class StorageSitesController : ControllerBase
     [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetTransferHistory(Guid id)
     {
+        var site = await _db.StorageSites.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        if (site is null) return NotFound();
+        if (!CanAccessGovernorate(site.GovernorateId)) return Forbid();
+
         var out_ = await _db.StockTransfers
             .Include(t => t.ToSite)
             .Include(t => t.AuthorizedBy)
@@ -389,6 +408,9 @@ public class StorageSitesController : ControllerBase
     }
 
     // ---- Helper ---------------------------------------------------
+    private bool CanAccessGovernorate(Guid governorateId)
+        => _cu.Role != "GovernorateManager" || _cu.GovernorateId == governorateId;
+
     private static StorageSiteDto MapDto(StorageSite s)
     {
         var pct = s.CapacityKg > 0 ? (decimal)s.CurrentStockKg / s.CapacityKg * 100 : 0;

@@ -15,14 +15,18 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-// ---- Background Services (Cleanups) ----------------
+// ---- Background Services (Cleanups & KeepAlives) ----------------
 builder.Services.AddHostedService<WheatTrace.Api.MessageCleanupWorker>();
+builder.Services.AddHostedService<WheatTrace.Api.Services.SupabaseKeepAliveService>();
 
 // ---- نظام المصادقة بالرموز (JWT Authentication) ----
 // تم تطبيق أعلى معايير أمن المعلومات هنا لضمان تشفير جلسات المستخدمين.
 // النظام يتحقق من: المصدر (Issuer)، المستقبل (Audience)، وتاريخ الصلاحية (Lifetime)
 // لضمان عدم تعرض النظام لهجمات إعادة الإرسال أو سرقة الهوية.
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+    throw new InvalidOperationException("JWT signing key is not configured. Set Jwt:Key via environment variables or user secrets.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -44,7 +48,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/api/hubs"))
                 {
                     context.Token = accessToken;
                 }
@@ -68,10 +72,23 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // ---- CORS --------------------------------------------------
-var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 builder.Services.AddCors(opt =>
+{
     opt.AddDefaultPolicy(p =>
-        p.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // في التطوير: مسامحة جميع النطاقات لسهولة التجربة محلياً
+            p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        }
+        else
+        {
+            // في الإنتاج: السماح فقط للنطاق المُستضاف على Vercel لضمان أمان البيانات
+            var productionOrigins = Environment.GetEnvironmentVariable("CORS_ORIGINS")?.Split(',') ?? ["https://your-vercel.vercel.app"];
+            p.WithOrigins(productionOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+        }
+    });
+});
 
 // ---- القنوات المباشرة (SignalR) والتخزين المؤقت للمقاطعات ----
 // تم إدراج SignalR لضخ البيانات اللحظية (WebSockets) للمراقبين دون الحاجة لإعادة تحميل الصفحة.
@@ -87,11 +104,14 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
-// ---- Seed Admin User & Governorates --------------------------
-await SeedAdmin.EnsureAdminExists(app.Services);
-await WheatTrace.Api.SeedGovernorates.EnsureGovernoratesExist(app.Services);
-await WheatTrace.Api.SeedRealData.SeedAsync(app.Services);
-await WheatTrace.Api.SeedTestUsers.SeedAsync(app.Services);
+// ---- Seed development-only data ------------------------------
+if (app.Environment.IsDevelopment())
+{
+    await SeedAdmin.EnsureAdminExists(app.Services);
+    await WheatTrace.Api.SeedGovernorates.EnsureGovernoratesExist(app.Services);
+    await WheatTrace.Api.SeedRealData.SeedAsync(app.Services);
+    await WheatTrace.Api.SeedTestUsers.SeedAsync(app.Services);
+}
 
 // ---- Pipeline ----------------------------------------------
 app.UseExceptionHandler();
@@ -112,6 +132,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/api/health");
+app.MapGet("/health", () => Results.Ok(new {
+    status = "healthy",
+    time = DateTime.UtcNow
+}));
+
 app.MapHub<WheatTrace.Api.Hubs.LiveUpdateHub>("/api/hubs/live");
 
-app.Run();
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+app.Run($"http://0.0.0.0:{port}");
+
+// خاص بالاختبارات: يجعل الـ Program مرئياً لـ WebApplicationFactory
+public partial class Program { }

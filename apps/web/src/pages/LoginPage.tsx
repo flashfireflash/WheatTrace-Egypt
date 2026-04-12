@@ -101,14 +101,13 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              dir="ltr"
-              style={{ background: '#f1f5f9', border: '2px solid transparent', fontSize: '1rem', color: '#0f172a' }}
+              style={{ background: '#f1f5f9', border: '2px solid transparent', fontSize: '1rem', color: '#0f172a', textAlign: 'left', direction: 'ltr', width: '100%', display: 'block' }}
               placeholder="admin"
             />
           </div>
 
           <div>
-            <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#334155' }}>
+            <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#334155', marginBottom: '0.5rem' }}>
               <Lock size={16} /> كلمة المرور
             </label>
             <input
@@ -117,8 +116,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              dir="ltr"
-              style={{ background: '#f1f5f9', border: '2px solid transparent', fontSize: '1rem', color: '#0f172a' }}
+              style={{ background: '#f1f5f9', border: '2px solid transparent', fontSize: '1rem', color: '#0f172a', textAlign: 'left', direction: 'ltr', width: '100%', display: 'block' }}
               placeholder="••••••••"
             />
           </div>

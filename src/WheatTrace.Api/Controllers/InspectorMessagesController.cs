@@ -45,6 +45,13 @@ public class InspectorMessagesController : ControllerBase
     [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> SendMessage([FromBody] SendMessageRequest req)
     {
+        var inspector = await _db.Users.FirstOrDefaultAsync(u => u.Id == req.InspectorId);
+        if (inspector is null || inspector.Role != WheatTrace.Domain.Enums.UserRole.Inspector)
+            return BadRequest(new { message = "المستخدم المستهدف ليس مفتشاً" });
+
+        if (_cu.Role == "GovernorateManager" && inspector.GovernorateId != _cu.GovernorateId)
+            return Forbid();
+
         var msg = new InspectorMessage
         {
             Id = Guid.NewGuid(),
@@ -70,6 +77,7 @@ public class InspectorMessagesController : ControllerBase
         msg.IsRead = true;
         msg.ReadAt = DateTime.UtcNow;
         msg.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
         return Ok(new { message = "تم القراءة" });
     }
 

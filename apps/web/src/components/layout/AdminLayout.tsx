@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,25 +7,26 @@ import {
   Bell, Menu, X, ChevronRight, Building2, FileSpreadsheet, MapIcon, Inbox, ShieldAlert,
   ClipboardEdit, CalendarOff
 } from 'lucide-react';
-import AdminDashboard       from '../../pages/admin/AdminDashboard';
-import AdminUsers           from '../../pages/admin/AdminUsers';
-import AdminSites           from '../../pages/admin/AdminSites';
-import AdminAuditLogs       from '../../pages/admin/AdminAuditLogs';
-import AdminAnnouncements   from '../../pages/admin/AdminAnnouncements';
-import AdminMarketingEntities from '../../pages/admin/AdminMarketingEntities';
-import AdminAssignments     from '../../pages/admin/AdminAssignments';
-import AdminReports         from '../../pages/admin/AdminReports';
-import AdminInbox           from '../../pages/admin/AdminInbox';
-import AdminMap             from '../../pages/admin/AdminMap';
-import AdminSeasonManagement from '../../pages/admin/AdminSeasonManagement';
-import AdminEditRequests    from '../../pages/admin/AdminEditRequests';
-import AdminHolidays        from '../../pages/admin/AdminHolidays';
 import ThemeToggle          from '../ui/ThemeToggle';
 import ProfileSettingsModal from '../ui/ProfileSettingsModal';
 import AnnouncementBanner   from '../ui/AnnouncementBanner';
 import SupabaseStorageBar   from '../ui/SupabaseStorageBar';
 import { useT }             from '../../store/localeStore';
 import api                  from '../../api/client';
+
+const AdminDashboard = lazy(() => import('../../pages/admin/AdminDashboard'));
+const AdminUsers = lazy(() => import('../../pages/admin/AdminUsers'));
+const AdminSites = lazy(() => import('../../pages/admin/AdminSites'));
+const AdminAuditLogs = lazy(() => import('../../pages/admin/AdminAuditLogs'));
+const AdminAnnouncements = lazy(() => import('../../pages/admin/AdminAnnouncements'));
+const AdminMarketingEntities = lazy(() => import('../../pages/admin/AdminMarketingEntities'));
+const AdminAssignments = lazy(() => import('../../pages/admin/AdminAssignments'));
+const AdminReports = lazy(() => import('../../pages/admin/AdminReports'));
+const AdminInbox = lazy(() => import('../../pages/admin/AdminInbox'));
+const AdminMap = lazy(() => import('../../pages/admin/AdminMap'));
+const AdminSeasonManagement = lazy(() => import('../../pages/admin/AdminSeasonManagement'));
+const AdminEditRequests = lazy(() => import('../../pages/admin/AdminEditRequests'));
+const AdminHolidays = lazy(() => import('../../pages/admin/AdminHolidays'));
 
 // قائمة التنقل لمدير النظام (Admin) - الأوسع صلاحية
 const NAV_ITEMS = [
@@ -228,22 +229,24 @@ export default function AdminLayout() {
         {/* التفريعات (Routes) للمشاهد الداخلية */}
         <main style={{ flex: 1, padding: 'clamp(1rem, 3vw, 1.75rem)', overflowY: 'auto' }}>
           <div style={{ maxWidth: 1400, width: '100%', margin: '0 auto' }}>
-            <Routes>
-              <Route path="/"              element={<AdminDashboard />} />
-              <Route path="/users"         element={<AdminUsers />} />
-              <Route path="/authorities"   element={<AdminMarketingEntities />} />
-              <Route path="/sites"         element={<AdminSites />} />
-              <Route path="/assignments"   element={<AdminAssignments />} />
-              <Route path="/edit-requests" element={<AdminEditRequests />} />
-              <Route path="/reports"       element={<AdminReports />} />
-              <Route path="/map"           element={<AdminMap />} />
-              <Route path="/announcements" element={<AdminAnnouncements />} />
-              <Route path="/inbox"         element={<AdminInbox />} />
-              <Route path="/audit-logs"    element={<AdminAuditLogs />} />
-              <Route path="/season"        element={<AdminSeasonManagement />} />
-              <Route path="/holidays"      element={<AdminHolidays />} />
-              <Route path="/*"             element={<AdminDashboard />} />
-            </Routes>
+            <Suspense fallback={<div style={{ minHeight: 320, display: 'grid', placeItems: 'center', color: 'var(--text-secondary)' }}>جاري تحميل الصفحة...</div>}>
+              <Routes>
+                <Route path="/"              element={<AdminDashboard />} />
+                <Route path="/users"         element={<AdminUsers />} />
+                <Route path="/authorities"   element={<AdminMarketingEntities />} />
+                <Route path="/sites"         element={<AdminSites />} />
+                <Route path="/assignments"   element={<AdminAssignments />} />
+                <Route path="/edit-requests" element={<AdminEditRequests />} />
+                <Route path="/reports"       element={<AdminReports />} />
+                <Route path="/map"           element={<AdminMap />} />
+                <Route path="/announcements" element={<AdminAnnouncements />} />
+                <Route path="/inbox"         element={<AdminInbox />} />
+                <Route path="/audit-logs"    element={<AdminAuditLogs />} />
+                <Route path="/season"        element={<AdminSeasonManagement />} />
+                <Route path="/holidays"      element={<AdminHolidays />} />
+                <Route path="/*"             element={<AdminDashboard />} />
+              </Routes>
+            </Suspense>
           </div>
         </main>
       </div>

@@ -10,8 +10,12 @@ import {
 interface DailyBreakdownProps {
   /** تمرير siteId ثابت (للمفتش في موقعه الحالي) */
   fixedSiteId?: string;
-  /** إخفاء فلتر المحافظة (للمفتش أو مدير المحافظة) */
+  /** تثبيت governorateId (لمدير المحافظة) */
+  fixedGovId?: string;
+  /** إخفاء فلتر المحافظة */
   hideGovFilter?: boolean;
+  /** قائمة مواقع مسموحة فقط — لتقييد القائمة المنسدلة (للمفتش) */
+  allowedSites?: { id: string; name: string }[];
   /** عنوان التقرير */
   title?: string;
 }
@@ -27,7 +31,7 @@ const tdStyle: React.CSSProperties = {
   fontSize: '0.85rem', textAlign: 'center', color: '#1e293b'
 };
 
-export default function DailyBreakdownReport({ fixedSiteId, hideGovFilter = false, title = 'التوريد اليومي التفصيلي' }: DailyBreakdownProps) {
+export default function DailyBreakdownReport({ fixedSiteId, fixedGovId, hideGovFilter = false, allowedSites, title = 'التوريد اليومي التفصيلي' }: DailyBreakdownProps) {
   const { user } = useAuthStore();
   const today    = new Date().toISOString().slice(0, 10);
   const firstDay = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
@@ -35,7 +39,9 @@ export default function DailyBreakdownReport({ fixedSiteId, hideGovFilter = fals
   const [startDate, setStart] = useState(firstDay);
   const [endDate, setEnd]     = useState(today);
   const [siteId, setSiteId]   = useState(fixedSiteId ?? '');
-  const [govId, setGovId]     = useState('');
+  // إذا كان fixedGovId ممرراً نستخدمه مباشرة ولا نسمح بتغييره
+  const [govId, setGovId]     = useState(fixedGovId ?? '');
+  const effectiveGovId = fixedGovId ?? govId;
   const [authId, setAuthId]   = useState('');
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
@@ -49,24 +55,26 @@ export default function DailyBreakdownReport({ fixedSiteId, hideGovFilter = fals
     queryKey: ['auths'],
     queryFn: () => api.get('/authorities').then(r => r.data),
   });
-  const { data: sites = [] } = useQuery({
-    queryKey: ['sites-filter', govId, authId],
-    queryFn: () => api.get('/storage-sites', { params: { governorateId: govId || undefined, authorityId: authId || undefined } }).then(r => {
+  // إذا تم تمرير allowedSites نستخدمها مباشرة بدلاً من جلب كل المواقع
+  const { data: sitesRaw = [] } = useQuery({
+    queryKey: ['sites-filter', effectiveGovId, authId],
+    queryFn: () => api.get('/storage-sites', { params: { governorateId: effectiveGovId || undefined, authorityId: authId || undefined } }).then(r => {
       const raw = r.data;
       return Array.isArray(raw) ? raw : (raw?.items ?? []);
     }),
-    enabled: !fixedSiteId,
+    enabled: !fixedSiteId && !allowedSites,
   });
+  const sites = allowedSites ?? sitesRaw;
 
   // ── جلب بيانات التقرير ──
   const { data, isLoading, error } = useQuery({
-    queryKey: ['daily-breakdown', startDate, endDate, fixedSiteId ?? siteId, govId, authId],
+    queryKey: ['daily-breakdown', startDate, endDate, fixedSiteId ?? siteId, effectiveGovId, authId],
     queryFn: () => api.get('/reports/daily-breakdown', {
       params: {
         startDate,
         endDate,
         siteId:       (fixedSiteId ?? siteId) || undefined,
-        governorateId: govId || undefined,
+        governorateId: effectiveGovId || undefined,
         authorityId:   authId || undefined,
       }
     }).then(r => r.data),

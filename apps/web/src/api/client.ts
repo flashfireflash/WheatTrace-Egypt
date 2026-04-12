@@ -6,7 +6,8 @@ import { useAuthStore } from '../store/authStore';
 // ════════════════════════════════════════════════════════════════════════════
 // تم ضبط المحور الأساسي لجميع طلبات الشبكة للتعامل مع الـ API بنسق JSON.
 const api = axios.create({
-  baseURL: '/api',
+  // قراءة الرابط من متغيرات بيئة Vercel للنسخة الحية، أو استخدام المسار المحلي كبديل
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 

@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/WheatTrace.Api/WheatTrace.Api.csproj" />
+    <Project Path="src/WheatTrace.Api.Tests/WheatTrace.Api.Tests.csproj" />
     <Project Path="src/WheatTrace.Application/WheatTrace.Application.csproj" />
     <Project Path="src/WheatTrace.Domain/WheatTrace.Domain.csproj" />
     <Project Path="src/WheatTrace.Infrastructure/WheatTrace.Infrastructure.csproj" />

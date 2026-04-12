@@ -70,6 +70,7 @@ public class ReportsController : ControllerBase
     /// RBAC: المفتش <- ادخالاته | مدير/مراقب المحافظة <- محافظتهم | النظام <- الكل.
     /// </summary>
     [HttpGet("daily-breakdown")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetDailyBreakdown(
         [FromQuery] string startDate,
         [FromQuery] string endDate,
@@ -159,6 +160,7 @@ public class ReportsController : ControllerBase
     /// يدعم تصفية نطاق زمني (startDate / endDate).
     /// </summary>
     [HttpGet("detailed-totals")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetDetailedTotals(
         [FromQuery] Guid? governorateId,
         [FromQuery] Guid? authorityId,
@@ -241,6 +243,7 @@ public class ReportsController : ControllerBase
                                 s.Status,
                                 s.CapacityKg,
                                 s.CurrentStockKg,
+                                s.TotalReceivedKg,
                                 W22_5Ton = w225 / 1000, W22_5Kg  = w225 % 1000,
                                 W23Ton   = w23  / 1000, W23Kg    = w23  % 1000,
                                 W23_5Ton = w235 / 1000, W23_5Kg  = w235 % 1000,
@@ -296,6 +299,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("site-aggregation/{siteId:guid}")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetSiteAggregation(Guid siteId)
     {
         var entries = await _db.DailyEntries
@@ -311,6 +315,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("inspector-days")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetInspectorDays(
         [FromQuery] DateOnly? startDate,
         [FromQuery] DateOnly? endDate,
@@ -347,6 +352,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("rejections-detailed")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetDetailedRejections(
         [FromQuery] DateOnly? startDate,
         [FromQuery] DateOnly? endDate,
@@ -405,6 +411,7 @@ public class ReportsController : ControllerBase
     /// سجل حركات النقل والصرف التفصيلي
     /// </summary>
     [HttpGet("transfers-history")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> GetTransfersHistory(
         [FromQuery] string startDate, 
         [FromQuery] string endDate,

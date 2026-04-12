@@ -1,8 +1,13 @@
 const { Client } = require('pg');
 
 async function test() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('Set DATABASE_URL before running this script.');
+  }
+
   const client = new Client({
-    connectionString: "postgres://postgres.ryjhvbnosdkcledhsxwm:Nfsa$$08042026@aws-1-eu-central-1.pooler.supabase.com:5432/postgres",
+    connectionString,
     ssl: { rejectUnauthorized: false }
   });
 

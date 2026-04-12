@@ -16,20 +16,21 @@ interface RejectionData {
   treatedQuantityTon: number;
 }
 
-export default function AdminReportsRejections() {
+export default function AdminReportsRejections({ fixedGovId }: { fixedGovId?: string }) {
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
   );
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [governorateId, setGovId] = useState('');
+  const [governorateId, setGovId] = useState(fixedGovId ?? '');
+  const effectiveGovId = fixedGovId ?? governorateId;
   const [search, setSearch] = useState('');
 
-  const { data: governorates = [] } = useQuery({ queryKey: ['govs'], queryFn: () => api.get('/governorates').then(r => r.data) });
+  const { data: governorates = [] } = useQuery({ queryKey: ['govs'], queryFn: () => api.get('/governorates').then(r => r.data), enabled: !fixedGovId });
 
   const { data = [], isLoading } = useQuery<RejectionData[]>({
-    queryKey: ['rejections-detailed', startDate, endDate, governorateId],
+    queryKey: ['rejections-detailed', startDate, endDate, effectiveGovId],
     queryFn: () => api.get('/reports/rejections-detailed', {
-      params: { startDate, endDate, governorateId: governorateId || undefined }
+      params: { startDate, endDate, governorateId: effectiveGovId || undefined }
     }).then(r => r.data)
   });
 
@@ -65,13 +66,15 @@ export default function AdminReportsRejections() {
           <label className="input-label" style={{ fontSize: '0.8rem' }}>إلى تاريخ</label>
           <input type="date" className="input" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
-        <div style={{ flex: 1, minWidth: 180 }}>
-          <label className="input-label" style={{ fontSize: '0.8rem' }}>المحافظة</label>
-          <select className="input" value={governorateId} onChange={e => setGovId(e.target.value)}>
-            <option value="">جميع المحافظات</option>
-            {governorates.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
-        </div>
+        {!fixedGovId && (
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <label className="input-label" style={{ fontSize: '0.8rem' }}>المحافظة</label>
+            <select className="input" value={governorateId} onChange={e => setGovId(e.target.value)}>
+              <option value="">جميع المحافظات</option>
+              {governorates.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+          </div>
+        )}
         <div style={{ flex: 2, minWidth: 200 }}>
           <label className="input-label" style={{ fontSize: '0.8rem' }}>بحث بالموقع أو المحافظة</label>
           <div style={{ position: 'relative' }}>

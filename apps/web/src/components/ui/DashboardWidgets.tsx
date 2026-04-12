@@ -11,6 +11,8 @@ import { Activity, RefreshCw } from 'lucide-react';
 
 // ── مساعد: حساب الكيلوجرامات الكلية لموقع (يقبل camelCase و PascalCase) ──
 function calcSiteKg(s: any): number {
+  if (s.totalReceivedKg != null) return s.totalReceivedKg;
+  if (s.TotalReceivedKg != null) return s.TotalReceivedKg;
   return (
     ((s.w22_5Ton ?? s.W22_5Ton ?? 0) * 1000 + (s.w22_5Kg ?? s.W22_5Kg ?? 0)) +
     ((s.w23Ton   ?? s.W23Ton   ?? 0) * 1000 + (s.w23Kg   ?? s.W23Kg   ?? 0)) +
@@ -20,7 +22,7 @@ function calcSiteKg(s: any): number {
 
 // ── الرصد الرقمي الأخضر الداكن (الإجمالي الموسمي) ──
 export function DigitalTotalWidget({ data }: { data: any[] }) {
-  let w22_5KgTotal = 0, w23KgTotal = 0, w23_5KgTotal = 0;
+  let w22_5KgTotal = 0, w23KgTotal = 0, w23_5KgTotal = 0, totalReceivedKgAll = 0;
 
   data.forEach((gov: any) => {
     gov.authorities?.forEach((auth: any) => {
@@ -28,11 +30,12 @@ export function DigitalTotalWidget({ data }: { data: any[] }) {
         w22_5KgTotal += (s.w22_5Ton ?? s.W22_5Ton ?? 0) * 1000 + (s.w22_5Kg ?? s.W22_5Kg ?? 0);
         w23KgTotal   += (s.w23Ton   ?? s.W23Ton   ?? 0) * 1000 + (s.w23Kg   ?? s.W23Kg   ?? 0);
         w23_5KgTotal += (s.w23_5Ton ?? s.W23_5Ton ?? 0) * 1000 + (s.w23_5Kg ?? s.W23_5Kg ?? 0);
+        totalReceivedKgAll += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
       });
     });
   });
 
-  const gKgRaw   = w22_5KgTotal + w23KgTotal + w23_5KgTotal;
+  const gKgRaw   = totalReceivedKgAll > 0 ? totalReceivedKgAll : (w22_5KgTotal + w23KgTotal + w23_5KgTotal);
   const gTon     = Math.floor(gKgRaw / 1000);       const gKg     = gKgRaw     % 1000;
   const w22_5Ton = Math.floor(w22_5KgTotal / 1000); const w22_5Kg = w22_5KgTotal % 1000;
   const w23Ton   = Math.floor(w23KgTotal   / 1000); const w23Kg   = w23KgTotal   % 1000;

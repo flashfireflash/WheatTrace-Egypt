@@ -61,6 +61,7 @@ public class AssignmentsController : ControllerBase
             {
                 a.Id,
                 a.Date,
+                SiteId   = a.SiteId,
                 SiteName = a.Site?.Name,
                 ShiftName = a.Shift?.Name,
                 IsHoliday = isHoliday
@@ -358,7 +359,12 @@ public class AssignmentsController : ControllerBase
     {
         var req = await _db.AssignmentTransferRequests.FindAsync(id);
         if (req is null) return NotFound();
-        if (req.FromGovernorateId != _currentUser.GovernorateId) return Forbid();
+
+        // المراقبون وما فوقهم يوافقون مباشرة بدون قيد المحافظة
+        var isPrivileged = _currentUser.Role is "Monitor" or "GeneralMonitor" or "Admin";
+        if (!isPrivileged && req.FromGovernorateId != _currentUser.GovernorateId)
+            return Forbid();
+
         if (req.Status != RequestStatus.Pending) return BadRequest(new { message = "تم معالجة الطلب مسبقاً" });
 
         // Deactivate old assignment on effective date
@@ -407,7 +413,12 @@ public class AssignmentsController : ControllerBase
     {
         var req = await _db.AssignmentTransferRequests.FindAsync(id);
         if (req is null) return NotFound();
-        if (req.FromGovernorateId != _currentUser.GovernorateId) return Forbid();
+
+        // المراقبون وما فوقهم يرفضون مباشرة بدون قيد المحافظة
+        var isPrivileged = _currentUser.Role is "Monitor" or "GeneralMonitor" or "Admin";
+        if (!isPrivileged && req.FromGovernorateId != _currentUser.GovernorateId)
+            return Forbid();
+
         if (req.Status != RequestStatus.Pending) return BadRequest(new { message = "تم معالجة الطلب مسبقاً" });
 
         req.Status = RequestStatus.Rejected;

@@ -43,6 +43,9 @@ public record DailyEntryDto(
     string TotalDisplay,       // e.g. "523 طن 922 كجم"
     string? Notes,
     bool IsEditable,           // true if within 1-hour window
+    bool IsEditedByManager,    // تم تعديله بواسطة مدير المحافظة وموافقة مراقب العمليات
+    string? ManagerEditNote,   // سبب التعديل الذي كتبه المدير
+    DateTime? EditApprovedAt,  // وقت الموافقة على التعديل
     RejectionDto? Rejection
 );
 

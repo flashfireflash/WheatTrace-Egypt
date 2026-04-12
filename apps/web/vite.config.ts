@@ -42,6 +42,21 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('leaflet') || id.includes('react-leaflet')) {
+            return 'vendor-map';
+          }
+          if (id.includes('react') || id.includes('zustand') || id.includes('@tanstack/react-query')) {
+            return 'vendor-core';
+          }
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {

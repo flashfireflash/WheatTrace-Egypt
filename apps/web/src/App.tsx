@@ -1,15 +1,16 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
 import LoginPage from './pages/LoginPage';
-import InspectorLayout from './components/layout/InspectorLayout';
-import ManagerLayout from './components/layout/ManagerLayout';
-import MonitorLayout from './components/layout/MonitorLayout';
-import AdminLayout from './components/layout/AdminLayout';
 import SplashScreen from './pages/SplashScreen';
+
+const InspectorLayout = lazy(() => import('./components/layout/InspectorLayout'));
+const ManagerLayout = lazy(() => import('./components/layout/ManagerLayout'));
+const MonitorLayout = lazy(() => import('./components/layout/MonitorLayout'));
+const AdminLayout = lazy(() => import('./components/layout/AdminLayout'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -29,15 +30,21 @@ function RoleRouter() {
   const { user } = useAuthStore();
   if (!user) return <Navigate to="/login" replace />;
 
-  switch (user.role) {
-    case 'Inspector':          return <InspectorLayout />;
-    case 'GovernorateManager': return <ManagerLayout />;
-    case 'OperationsMonitor':
-    case 'GeneralMonitor':     return <MonitorLayout />;
-    case 'Admin':              return <AdminLayout />;
-    case 'SuperAdmin':         return <AdminLayout />;
-    default:                   return <Navigate to="/login" replace />;
-  }
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', color: 'var(--text-secondary)' }}>جاري التحميل...</div>}>
+      {(() => {
+        switch (user.role) {
+          case 'Inspector':          return <InspectorLayout />;
+          case 'GovernorateManager': return <ManagerLayout />;
+          case 'OperationsMonitor':
+          case 'GeneralMonitor':     return <MonitorLayout />;
+          case 'Admin':              return <AdminLayout />;
+          case 'SuperAdmin':         return <AdminLayout />;
+          default:                   return <Navigate to="/login" replace />;
+        }
+      })()}
+    </Suspense>
+  );
 }
 
 function GhostSwitcher() {
@@ -58,7 +65,7 @@ function GhostSwitcher() {
         <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', background: '#333', borderRadius: '1rem' }}>{user.role}</span>
       </div>
       <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', maxWidth: '280px' }}>
-        {['SuperAdmin', 'Admin', 'GovernorateManager', 'Inspector', 'GeneralMonitor'].map(r => (
+        {['SuperAdmin', 'Admin', 'GovernorateManager', 'Inspector', 'GeneralMonitor', 'OperationsMonitor'].map(r => (
           <button
             key={r}
             onClick={() => {

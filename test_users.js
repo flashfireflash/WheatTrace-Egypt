@@ -1,11 +1,16 @@
 const { Pool } = require('pg');
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('Set DATABASE_URL before running this script.');
+}
+
 const pool = new Pool({
-  connectionString: 'postgresql://postgres.ryovgrmjovvjtycbfnjf:Hazem2016@@aws-0-eu-central-1.pooler.supabase.com:6543/postgres'
+  connectionString
 });
 
 async function run() {
-  const res = await pool.query('SELECT username, "Role", "Name", "PasswordHash" FROM users');
+  const res = await pool.query('SELECT username, role, name FROM users');
   console.log(res.rows);
   pool.end();
 }

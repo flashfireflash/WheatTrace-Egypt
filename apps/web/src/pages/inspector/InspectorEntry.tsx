@@ -209,10 +209,20 @@ export default function InspectorEntry() {
           style={{ width: 'auto', padding: '0.4rem 0.6rem', fontSize: '0.85rem' }} 
         />
       </div>
-      <button 
+      <button
         onClick={() => setCalcOpen(true)}
-        style={{ background: 'var(--brand)', color: 'white', border: 'none', borderRadius: '0.75rem', width: '3.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(46,125,50,0.2)' }}
-        title="فتح مُسجّلة الشاحنات السريعة"
+        disabled={!assignment || !!assignmentError || assignment?.isHoliday}
+        style={{
+          background: (!assignment || !!assignmentError || assignment?.isHoliday) ? 'var(--surface-2)' : 'var(--brand)',
+          color: (!assignment || !!assignmentError || assignment?.isHoliday) ? 'var(--text-muted)' : 'white',
+          border: 'none', borderRadius: '0.75rem', width: '3.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: (!assignment || !!assignmentError || assignment?.isHoliday) ? 'not-allowed' : 'pointer',
+          boxShadow: (!assignment || !!assignmentError || assignment?.isHoliday) ? 'none' : '0 4px 12px rgba(46,125,50,0.2)',
+          opacity: (!assignment || !!assignmentError || assignment?.isHoliday) ? 0.45 : 1,
+          transition: 'all 0.2s',
+        }}
+        title={(!assignment || !!assignmentError) ? 'الحاسبة متاحة فقط عند وجود تسكين نشط' : 'فتح مُسجّلة الشاحنات السريعة'}
       >
         <Calculator size={24} />
       </button>

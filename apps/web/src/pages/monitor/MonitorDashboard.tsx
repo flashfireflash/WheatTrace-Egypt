@@ -1,15 +1,13 @@
-import { lazy, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import { useLiveUpdates } from '../../hooks/useLiveUpdates';
 import {
   Warehouse, Wheat, AlertTriangle, Activity,
-  RefreshCw, Wifi, WifiOff, MapPin, TrendingUp
+  RefreshCw, Wifi, WifiOff, TrendingUp
 } from 'lucide-react';
 import { FullStatsWidget } from '../../components/ui/DashboardWidgets';
 
-const InteractiveMap = lazy(() => import('../../components/ui/InteractiveMap'));
 
 /**
  * لوحة تحكم المراقبين (مراقب العمليات + المراقب العام)
@@ -144,21 +142,7 @@ export default function MonitorDashboard() {
         <FullStatsWidget isNational={isNational} />
       </div>
 
-      {/* ── الخريطة التفاعلية (مطابقة لمدير النظام) ── */}
-      <div className="card fade-in" style={{ padding: '0.875rem 1rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <MapPin size={18} style={{ color: 'var(--brand)' }} />
-          الخريطة التفاعلية للمواقع النشطة
-          {sites.length > 0 && (
-            <span className="badge badge-success" style={{ fontSize: '0.75rem', marginRight: '0.25rem' }}>
-              {activeSites} / {sites.length} نشط
-            </span>
-          )}
-        </h3>
-        <Suspense fallback={<div style={{ height: 420, background: 'var(--surface-2)', borderRadius: 'var(--r-md)', animation: 'pulse-soft 1.5s infinite' }} />}>
-          <InteractiveMap sites={sites} />
-        </Suspense>
-      </div>
+
 
     </div>
   );

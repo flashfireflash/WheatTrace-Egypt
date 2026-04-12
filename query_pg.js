@@ -1,9 +1,15 @@
 const { Client } = require('pg');
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('Set DATABASE_URL before running this script.');
+}
+
 const client = new Client({
-  connectionString: 'Host=localhost;Database=postgres;Username=postgres;Password=postgres'
+  connectionString
 });
 client.connect().then(() => {
-  client.query("SELECT username, role, current_password_hash FROM public.\"users\" LIMIT 10").then(res => {
+  client.query('SELECT username, role FROM public.users LIMIT 10').then(res => {
     console.log(res.rows);
     client.end();
   }).catch(e => console.log(e));

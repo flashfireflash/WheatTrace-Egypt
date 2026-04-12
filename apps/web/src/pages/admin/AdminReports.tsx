@@ -8,26 +8,32 @@ import { useAuthStore } from '../../store/authStore';
 import DailyBreakdownReport from '../../components/ui/DailyBreakdownReport';
 export default function AdminReports() {
   const { user } = useAuthStore();
+  const isManager = user?.role === 'GovernorateManager';
+
   const [activeTab, setActiveTab] = useState<'totals' | 'rejections' | 'attendance' | 'daily'>('daily');
-  const [governorateId, setGovId] = useState('');
+  // مدير المحافظة: قيمة ثابتة = محافظته، لا يستطيع تغييرها
+  const [governorateId, setGovId] = useState(isManager ? (user?.governorateId ?? '') : '');
   const [authorityId, setAuthId]   = useState('');
   const [siteId, setSiteId]       = useState('');
   const today     = new Date().toISOString().slice(0, 10);
-  const firstDay  = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10); // 1 Jan
+  const firstDay  = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
   const [startDate, setStart] = useState(firstDay);
   const [endDate, setEnd]     = useState(today);
 
-  const { data: governorates = [] } = useQuery({ queryKey: ['govs'], queryFn: () => api.get('/governorates').then(r => r.data) });
+  // الـ effective governorate ID المستخدم في الـ API
+  const effectiveGovId = isManager ? (user?.governorateId ?? '') : governorateId;
+
+  const { data: governorates = [] } = useQuery({ queryKey: ['govs'], queryFn: () => api.get('/governorates').then(r => r.data), enabled: !isManager });
   const { data: authorities = [] } = useQuery({ queryKey: ['auths'], queryFn: () => api.get('/authorities').then(r => r.data) });
   const { data: sites = [] } = useQuery({
-    queryKey: ['sites', governorateId, authorityId],
-    queryFn: () => api.get('/storage-sites', { params: { governorateId: governorateId || undefined, authorityId: authorityId || undefined } }).then(r => r.data)
+    queryKey: ['sites', effectiveGovId, authorityId],
+    queryFn: () => api.get('/storage-sites', { params: { governorateId: effectiveGovId || undefined, authorityId: authorityId || undefined } }).then(r => r.data)
   });
 
   const { data: reportData, isLoading } = useQuery({
-    queryKey: ['detailed-totals', governorateId, authorityId, siteId, startDate, endDate],
+    queryKey: ['detailed-totals', effectiveGovId, authorityId, siteId, startDate, endDate],
     queryFn: () => api.get('/reports/detailed-totals', {
-      params: { governorateId: governorateId || undefined, authorityId: authorityId || undefined, siteId: siteId || undefined,
+      params: { governorateId: effectiveGovId || undefined, authorityId: authorityId || undefined, siteId: siteId || undefined,
                 startDate: startDate || undefined, endDate: endDate || undefined }
     }).then(r => r.data)
   });
@@ -100,7 +106,11 @@ export default function AdminReports() {
 
       {/* محتوى التبويبات */}
       {activeTab === 'daily' && (
-        <DailyBreakdownReport title="التوريد اليومي التفصيلي" />
+        <DailyBreakdownReport
+          title="التوريد اليومي التفصيلي"
+          hideGovFilter={isManager}
+          fixedGovId={isManager ? (user?.governorateId ?? '') : undefined}
+        />
       )}
       {activeTab === 'totals' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -251,13 +261,13 @@ export default function AdminReports() {
 
       {activeTab === 'attendance' && (
         <div className="card" style={{ padding: '1.5rem' }}>
-          <AdminReportsInspectorDays />
+          <AdminReportsInspectorDays fixedGovId={isManager ? (user?.governorateId ?? '') : undefined} />
         </div>
       )}
 
       {activeTab === 'rejections' && (
         <div className="card" style={{ padding: '1.5rem' }}>
-          <AdminReportsRejections />
+          <AdminReportsRejections fixedGovId={isManager ? (user?.governorateId ?? '') : undefined} />
         </div>
       )}
 

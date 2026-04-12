@@ -253,28 +253,28 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(7035),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1794),
                             IsActive = true,
                             Name = "الشركة المصرية القابضة للصوامع"
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(7037),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1796),
                             IsActive = true,
                             Name = "الشركة العامة للصوامع والتخزين"
                         },
                         new
                         {
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(7038),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1797),
                             IsActive = true,
                             Name = "شركات المطاحن"
                         },
                         new
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(7039),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1798),
                             IsActive = true,
                             Name = "البنك الزراعي المصري"
                         });
@@ -295,9 +295,21 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("date");
 
+                    b.Property<DateTime?>("EditApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("edit_approved_at");
+
                     b.Property<Guid>("InspectorId")
                         .HasColumnType("uuid")
                         .HasColumnName("inspector_id");
+
+                    b.Property<bool>("IsEditedByManager")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_edited_by_manager");
+
+                    b.Property<string>("ManagerEditNote")
+                        .HasColumnType("text")
+                        .HasColumnName("manager_edit_note");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text")
@@ -429,6 +441,10 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("EditReason")
+                        .HasColumnType("text")
+                        .HasColumnName("edit_reason");
+
                     b.Property<Guid>("EntryId")
                         .HasColumnType("uuid")
                         .HasColumnName("entry_id");
@@ -452,6 +468,11 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                     b.Property<Guid>("RequestedById")
                         .HasColumnType("uuid")
                         .HasColumnName("requested_by_id");
+
+                    b.Property<string>("RequestedByRole")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("requested_by_role");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -510,189 +531,189 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6772),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1591),
                             IsActive = true,
                             Name = "القاهرة"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000002"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6777),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1595),
                             IsActive = true,
                             Name = "الأسكندرية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000003"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6778),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1597),
                             IsActive = true,
                             Name = "بورسعيد"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000004"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6779),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1598),
                             IsActive = true,
                             Name = "السويس"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000005"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6781),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1599),
                             IsActive = true,
                             Name = "الدقهلية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000006"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6782),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1600),
                             IsActive = true,
                             Name = "الشرقية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000007"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6784),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1601),
                             IsActive = true,
                             Name = "القليوبية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000008"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6785),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1603),
                             IsActive = true,
                             Name = "كفر الشيخ"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000009"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6786),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1604),
                             IsActive = true,
                             Name = "الغربية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000010"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6787),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1606),
                             IsActive = true,
                             Name = "المنوفية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000011"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6789),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1607),
                             IsActive = true,
                             Name = "البحيرة"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000012"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6790),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1609),
                             IsActive = true,
                             Name = "الإسماعيلية"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000013"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6791),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1610),
                             IsActive = true,
                             Name = "الجيزة"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000014"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6792),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1611),
                             IsActive = true,
                             Name = "بني سويف"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000015"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6793),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1612),
                             IsActive = true,
                             Name = "الفيوم"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000016"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6794),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1613),
                             IsActive = true,
                             Name = "المنيا"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000017"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6796),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1614),
                             IsActive = true,
                             Name = "أسيوط"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000018"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6797),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1615),
                             IsActive = true,
                             Name = "سوهاج"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000019"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6798),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1617),
                             IsActive = true,
                             Name = "قنا"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000020"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6800),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1618),
                             IsActive = true,
                             Name = "أسوان"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000021"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6801),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1619),
                             IsActive = true,
                             Name = "الأقصر"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000022"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6802),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1620),
                             IsActive = true,
                             Name = "البحر الأحمر"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000023"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6803),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1621),
                             IsActive = true,
                             Name = "الوادي الجديد"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000024"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6804),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1622),
                             IsActive = true,
                             Name = "مطروح"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000025"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6806),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1623),
                             IsActive = true,
                             Name = "شمال سيناء"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000026"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6807),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1625),
                             IsActive = true,
                             Name = "جنوب سيناء"
                         },
                         new
                         {
                             Id = new Guid("11111111-0000-0000-0000-000000000027"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(6808),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1626),
                             IsActive = true,
                             Name = "دمياط"
                         });
@@ -1039,7 +1060,7 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                         new
                         {
                             Id = new Guid("55555555-0000-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(7069),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1820),
                             EndTime = new TimeSpan(0, 16, 0, 0, 0),
                             IsActive = true,
                             Name = "الوردية الأولى (الصباحية)",
@@ -1048,7 +1069,7 @@ namespace WheatTrace.Infrastructure.Data.Migrations
                         new
                         {
                             Id = new Guid("55555555-0000-0000-0000-000000000002"),
-                            CreatedAt = new DateTime(2026, 4, 9, 19, 19, 25, 478, DateTimeKind.Utc).AddTicks(7073),
+                            CreatedAt = new DateTime(2026, 4, 11, 20, 6, 32, 914, DateTimeKind.Utc).AddTicks(1824),
                             EndTime = new TimeSpan(0, 0, 0, 0, 0),
                             IsActive = true,
                             Name = "الوردية الثانية (المسائية)",

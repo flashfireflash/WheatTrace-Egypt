@@ -81,4 +81,55 @@ public class StorageSite : BaseEntity
     public ICollection<SiteLifecycleEvent> LifecycleEvents { get; set; } = [];
     public ICollection<StockTransfer> TransfersOut { get; set; } = []; // تحويلات صادرة
     public ICollection<StockTransfer> TransfersIn  { get; set; } = []; // تحويلات واردة
+
+    /// <summary>
+    /// تحديث أرباح وتجميع المخزون للموقع مع التحقق من صلاحية الأرصدة
+    /// </summary>
+    public void ApplyTransaction(long deltaKg, bool isCollectionEntry)
+    {
+        if (CurrentStockKg + deltaKg > CapacityKg)
+            throw new InvalidOperationException($"الكمية تتجاوز الطاقة التخزينية المتاحة. المتبقي: {CapacityKg - CurrentStockKg} كجم");
+
+        if (CurrentStockKg + deltaKg < 0)
+            throw new InvalidOperationException("لا يمكن تقليل الكمية لأن الرصيد الحالي سيصبح سالباً");
+
+        if (isCollectionEntry && TotalReceivedKg + deltaKg < 0)
+            throw new InvalidOperationException("لا يمكن تقليل الكمية لأن الإجمالي التاريخي سيصبح سالباً");
+
+        CurrentStockKg += deltaKg;
+        
+        if (isCollectionEntry)
+            TotalReceivedKg += deltaKg;
+    }
+
+    /// <summary>
+    /// تطبيق نقل صادر من الموقع مع التحقق من الرصيد المتاح.
+    /// الصادر ينقص الرصيد الحالي ولا يؤثر على الإجمالي (التاريخي).
+    /// </summary>
+    public void ApplyOutboundTransfer(long deltaKg)
+    {
+        if (deltaKg <= 0)
+            throw new ArgumentException("الكمية يجب أن تكون موجبة", nameof(deltaKg));
+            
+        if (CurrentStockKg < deltaKg)
+            throw new InvalidOperationException($"الكمية المطلوب نقلها ({deltaKg / 1000} طن) أكبر من الرصيد الحالي ({CurrentStockKg / 1000} طن)");
+
+        CurrentStockKg -= deltaKg;
+    }
+
+    /// <summary>
+    /// تطبيق نقل وارد إلى الموقع مع التحقق من السعة التخزينية المتاحة.
+    /// الوارد يزيد الرصيد الحالي ويزيد الإجمالي (لأنه رصيد دخل الموقع).
+    /// </summary>
+    public void ApplyInboundTransfer(long deltaKg)
+    {
+        if (deltaKg <= 0)
+            throw new ArgumentException("الكمية يجب أن تكون موجبة", nameof(deltaKg));
+            
+        if (CurrentStockKg + deltaKg > CapacityKg)
+            throw new InvalidOperationException($"الموقع الهدف لا يتسع للكمية. المتاح: {(CapacityKg - CurrentStockKg) / 1000} طن");
+
+        CurrentStockKg += deltaKg;
+        TotalReceivedKg += deltaKg;
+    }
 }

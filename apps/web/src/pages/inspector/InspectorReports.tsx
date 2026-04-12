@@ -36,6 +36,17 @@ export default function InspectorReports() {
     queryFn: () => api.get(`/assignments/my-history?startDate=${startDate}&endDate=${endDate}`).then(r => r.data)
   });
 
+  // جلب كل تاريخ المفتش (من 2020 حتى الآن) لاستخراج قائمة مواقعه المسموحة
+  const { data: allHistory = [] } = useQuery({
+    queryKey: ['inspector-all-sites'],
+    queryFn: () => api.get('/assignments/my-history?startDate=2020-01-01&endDate=2099-12-31').then(r => r.data),
+    staleTime: 300_000,
+  });
+  // استخراج المواقع الفريدة التي اشتغل فيها المفتش
+  const inspectorSites = Array.from(
+    new Map((allHistory as any[]).filter(a => a.siteId && a.siteName).map((a: any) => [a.siteId, { id: a.siteId, name: a.siteName }])).values()
+  );
+
   // دالة بسيطة لفتح حوار الطباعة الخاص بالمتصفح ليتم تصدير PDF للمستند
   const handlePrint = () => {
     window.print();
@@ -115,8 +126,8 @@ export default function InspectorReports() {
       {/* تبويب التوريد اليومي */}
       {activeTab === 'daily' && (
         <DailyBreakdownReport
-          fixedSiteId={user?.siteId}
           hideGovFilter
+          allowedSites={inspectorSites.length > 0 ? inspectorSites : undefined}
           title="تقرير التوريد اليومي التفصيلي"
         />
       )}

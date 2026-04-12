@@ -23,7 +23,6 @@ public static class DependencyInjection
 
         // ---- Core services ---------------------------------
         services.AddScoped<IJwtService, JwtService>();
-        services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IHolidayService, HolidayService>();
         services.AddScoped<IAuditService, AuditService>();
 

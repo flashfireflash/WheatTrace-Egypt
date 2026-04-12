@@ -13,9 +13,17 @@ public class EditRequest : BaseEntity
     public Guid EntryId { get; set; }
     public DailyEntry? Entry { get; set; }
 
-    // المفتش مقدِّم الطلب
+    // مقدِّم الطلب (مفتش أو مدير محافظة)
     public Guid RequestedById { get; set; }
     public User? RequestedBy { get; set; }
+
+    /// <summary>
+    /// دور مقدِّم الطلب: "Inspector" → المدير يوافق | "GovernorateManager" → مراقب العمليات يوافق
+    /// </summary>
+    public string RequestedByRole { get; set; } = "Inspector";
+
+    // سبب طلب التعديل (يكتبه المدير عند رفع الطلب)
+    public string? EditReason { get; set; }
 
     // المدير الذي وافق أو رفض الطلب
     public Guid? ApprovedById { get; set; }

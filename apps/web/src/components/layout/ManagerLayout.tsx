@@ -21,6 +21,7 @@ const AdminReports          = lazy(() => import('../../pages/admin/AdminReports'
 const AdminMap              = lazy(() => import('../../pages/admin/AdminMap'));
 const AdminUsers            = lazy(() => import('../../pages/admin/AdminUsers'));
 const DetailedDeliveryReport = lazy(() => import('../../pages/shared/DetailedDeliveryReport'));
+const InspectorEntry        = lazy(() => import('../../pages/inspector/InspectorEntry'));
 
 export default function ManagerLayout() {
   const { user, logout } = useAuthStore();
@@ -56,6 +57,7 @@ export default function ManagerLayout() {
     { to: '/transfers', label: 'الانتداب والنقل',       icon: ArrowLeftRight, badge: pendingTransfers },
     { to: '/entries',   label: 'سجل الكميات',           icon: ClipboardList },
     { to: '/reports',   label: 'التقارير',               icon: BarChart3 },
+    { to: '/inspector', label: 'شاشة استلام الطوارئ', icon: ClipboardList }
   ];
 
   return (
@@ -163,6 +165,7 @@ export default function ManagerLayout() {
               <Route path="/transfers-stock" element={<ManagerStockTransfers />} />
               <Route path="/reports"   element={<AdminReports />} />
               <Route path="/users"     element={<AdminUsers />} />
+              <Route path="/inspector" element={<InspectorEntry />} />
             </Routes>
           </Suspense>
         </main>

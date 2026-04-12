@@ -62,12 +62,15 @@ export default function ManagerAssignments() {
   });
 
   // استقدام قائمة مفتشي ومندوبي نفس المحافظة لتجنب إرسال موظفين محافظة لمحافظة أخرى
-  const { data: inspectors = [] } = useQuery<Inspector[]>({
+  const { data: rawInspectors = [] } = useQuery<Inspector[]>({
     queryKey: ['inspectors', user?.governorateId],
     queryFn: () =>
       api.get('/users', { params: { role: 'Inspector', governorateId: user?.governorateId } })
          .then(r => (Array.isArray(r.data) ? r.data : r.data.items ?? []).filter((u: any) => u.role === 'Inspector')),
   });
+
+  // إضافة حساب مدير المحافظة نفسه للقائمة كحالة طوارئ
+  const inspectors = user ? [{ id: user.userId, name: `${user.name} (أنا - مدير المحافظة الطارئ)` }, ...rawInspectors] : rawInspectors;
 
   // استقدام المواقع الجغرافية داخل محيط المحافظة
   const { data: sites = [] } = useQuery<Site[]>({

@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 // A component to generate dynamic HTML markers (Badges + Colors)
 const createDynamicIcon = (isOpen: boolean, hasSubmittedToday: boolean) => {
   const pinColor = isOpen ? '#2e7d32' : '#757575'; // Green if Open, Gray if Closed
-  const badgeIcon = hasSubmittedToday 
+  const badgeIcon = !isOpen ? '' : hasSubmittedToday 
     ? '<div style="background: #2e7d32; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; position: absolute; top: -5px; right: -5px; box-shadow: 0 0 4px rgba(0,0,0,0.3); border: 2px solid white">✔️</div>'
     : '<div style="background: #d32f2f; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; position: absolute; top: -5px; right: -5px; box-shadow: 0 0 4px rgba(0,0,0,0.3); border: 2px solid white">⚠️</div>';
 
@@ -62,7 +62,7 @@ export default function AdminMap() {
 
       // Data Submission filter
       if (filterData === 'submitted' && !s.hasSubmittedToday) return false;
-      if (filterData === 'unsubmitted' && s.hasSubmittedToday) return false;
+      if (filterData === 'unsubmitted' && (s.hasSubmittedToday || s.status !== 'Active')) return false;
 
       return true;
     });
@@ -74,7 +74,7 @@ export default function AdminMap() {
       open: sites.filter((s: any) => s.status === 'Active').length,
       closed: sites.filter((s: any) => s.status !== 'Active').length,
       submitted: sites.filter((s: any) => s.hasSubmittedToday).length,
-      unsubmitted: sites.filter((s: any) => !s.hasSubmittedToday).length,
+      unsubmitted: sites.filter((s: any) => !s.hasSubmittedToday && s.status === 'Active').length,
       unmapped: sites.filter((s: any) => !s.latitude || !s.longitude).length
     };
   }, [sites]);
@@ -166,9 +166,11 @@ export default function AdminMap() {
                       <div className={`badge ${site.status === 'Active' ? 'badge-success' : 'badge-danger'}`} style={{ margin: 0, display: 'inline-block' }}>
                         {site.status === 'Active' ? 'مفتوح للاستلام' : 'مغلق (لم يبدأ)'}
                       </div>
-                      <div className={`badge ${site.hasSubmittedToday ? 'badge-success' : 'badge-warning'}`} style={{ margin: 0, display: 'inline-block' }}>
-                        {site.hasSubmittedToday ? '✔️ تم توثيق بيان اليوم' : '⚠️ متأخر في التسجيل'}
-                      </div>
+                      {site.status === 'Active' && (
+                        <div className={`badge ${site.hasSubmittedToday ? 'badge-success' : 'badge-warning'}`} style={{ margin: 0, display: 'inline-block' }}>
+                          {site.hasSubmittedToday ? '✔️ تم توثيق بيان اليوم' : '⚠️ متأخر في التسجيل'}
+                        </div>
+                      )}
                     </div>
                     {site.locationText && (
                       <div style={{ marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px dashed #ddd', fontSize: '0.78rem', color: '#444' }}>
@@ -206,7 +208,7 @@ export default function AdminMap() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>سجلت بيان اليوم (حتى الآن)</p>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2e7d32' }}>{stats.submitted} <span style={{ fontSize: '1rem', fontWeight: 500 }}>موقع</span></div>
         </div>
-        <div className="card" onClick={() => setModalData({ title: 'متأخرة عن تسجيل البيان', sites: sites.filter((s:any) => !s.hasSubmittedToday) })} style={{ padding: '1rem', borderRight: '4px solid #d32f2f', cursor: 'pointer', transition: 'all 0.2s' }}>
+        <div className="card" onClick={() => setModalData({ title: 'متأخرة عن تسجيل البيان', sites: sites.filter((s:any) => !s.hasSubmittedToday && s.status === 'Active') })} style={{ padding: '1rem', borderRight: '4px solid #d32f2f', cursor: 'pointer', transition: 'all 0.2s' }}>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>متأخرة عن تسجيل البيان</p>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d32f2f' }}>{stats.unsubmitted} <span style={{ fontSize: '1rem', fontWeight: 500 }}>موقع</span></div>
         </div>

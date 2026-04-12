@@ -50,7 +50,7 @@ export default function AdminInbox() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>{msg.senderName}</span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {new Date(msg.createdAt).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })}
+                      {new Date(msg.createdAt).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -69,7 +69,7 @@ export default function AdminInbox() {
               <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>رسالة من: {selectedMessage.senderName}</h3>
                 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Clock size={14} /> {new Date(selectedMessage.createdAt).toLocaleString('ar-EG')}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Clock size={14} /> {new Date(selectedMessage.createdAt).toLocaleString('ar-EG-u-nu-latn')}</span>
                 </div>
               </div>
               

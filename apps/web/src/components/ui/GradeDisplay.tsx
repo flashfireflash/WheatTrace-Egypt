@@ -106,7 +106,7 @@ export function GradeStepper({ label, ton, kg, onChangeTon, onChangeKg, disabled
       {/* شريط الإجمالي اللفظي لهذه الدرجة يظهر في حال وجود قيم مدخلة */}
       {(ton > 0 || kg > 0) && (
         <div style={{ marginTop: '0.5rem', textAlign: 'center', fontSize: '0.78rem', color: 'var(--brand)', fontWeight: 700 }}>
-          = {ton.toLocaleString('ar-EG')} طن {String(kg).padStart(3, '0')} كجم
+          = {ton.toLocaleString('ar-EG-u-nu-latn')} طن {String(kg).padStart(3, '0')} كجم
         </div>
       )}
     </div>
@@ -131,7 +131,7 @@ export function GradeDisplay({ ton, kg, grade }: GradeDisplayProps) {
     }}>
       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>درجة {grade}</div>
       <div className="grade-cell" style={{ justifyContent: 'center' }}>
-        <span className="grade-ton">{ton.toLocaleString('ar-EG')}</span>
+        <span className="grade-ton">{ton.toLocaleString('ar-EG-u-nu-latn')}</span>
         <span className="grade-sep">طن</span>
         {/* حشو الكيلوجرام بالأصفار ليظهر بصيغة X.050 بدلاً من X.5  */}
         <span className="grade-kg">{String(kg).padStart(3, '0')}</span>

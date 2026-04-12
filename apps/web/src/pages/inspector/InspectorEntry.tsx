@@ -50,7 +50,7 @@ function totalKg(g22: GradeQty, g23: GradeQty, g235: GradeQty) {
 
 // ── منسق الأطنان اللفظي ──────────────────────────────────────────────────
 function formatTon(kg: number) {
-  return `${Math.floor(kg / 1000).toLocaleString('ar-EG')} طن ${String(kg % 1000).padStart(3, '0')} كجم`;
+  return `${Math.floor(kg / 1000).toLocaleString('ar-EG-u-nu-latn')} طن ${String(kg % 1000).padStart(3, '0')} كجم`;
 }
 
 /**

@@ -269,7 +269,7 @@ export default function AdminAssignments() {
                           {a.endDate ? (
                             <span style={{ fontSize: '0.82rem', color: isExpired ? 'var(--danger)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                               <CalendarOff size={13} />
-                              {new Date(a.endDate).toLocaleDateString('ar-EG')}
+                              {new Date(a.endDate).toLocaleDateString('ar-EG-u-nu-latn')}
                             </span>
                           ) : (
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
@@ -323,7 +323,7 @@ export default function AdminAssignments() {
                     <td>{r.toGovernorate} <ChevronRight size={13} style={{ verticalAlign: 'middle', opacity: 0.4 }} /></td>
                     <td style={{ fontSize: '0.85rem' }}>{r.targetSiteName}</td>
                     <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      {new Date(r.effectiveDate).toLocaleDateString('ar-EG')}
+                      {new Date(r.effectiveDate).toLocaleDateString('ar-EG-u-nu-latn')}
                     </td>
                     <td>
                       <span className={`badge ${r.status === 'Approved' ? 'badge-success' : r.status === 'Rejected' ? 'badge-danger' : ''}`}

@@ -163,7 +163,7 @@ export default function ManagerEntriesGrid() {
       {/* الدلائل والملخصات العائمة (Summary Badges) */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div className="badge badge-success" style={{ fontSize: '0.82rem', padding: '0.4rem 1rem' }}>
-          إجمالي الاستلام اليومي للمحافظة: {Math.floor(grandTotalKg / 1000).toLocaleString('ar-EG')} طن {String(grandTotalKg % 1000).padStart(3, '0')} كجم
+          إجمالي الاستلام اليومي للمحافظة: {Math.floor(grandTotalKg / 1000).toLocaleString('ar-EG-u-nu-latn')} طن {String(grandTotalKg % 1000).padStart(3, '0')} كجم
         </div>
         <div className="badge badge-info" style={{ fontSize: '0.82rem', padding: '0.4rem 1rem' }}>
           مواقع التخزين المستلمة: {filtered.length} صومعة وشونة

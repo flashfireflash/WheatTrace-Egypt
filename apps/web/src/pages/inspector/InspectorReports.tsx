@@ -197,7 +197,7 @@ export default function InspectorReports() {
                 <li key={a.id} style={{ padding: '1rem', borderBottom: '1px solid var(--border)', opacity: a.isHoliday ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Calendar size={14} /> {new Date(a.date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+                      <Calendar size={14} /> {new Date(a.date).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                       تمركُز اليوم: {a.siteName || 'صُنّف كـ غير محتسب'}

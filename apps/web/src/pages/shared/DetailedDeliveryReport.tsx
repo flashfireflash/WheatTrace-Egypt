@@ -170,7 +170,7 @@ export default function DetailedDeliveryReport() {
       {data && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
           {[
-            { label: 'إجمالي المستلَم', value: `${grandTon.toLocaleString('ar-EG')} طن ${String(grandKg).padStart(3,'0')} كجم`, color: 'var(--success)' },
+            { label: 'إجمالي المستلَم', value: `${grandTon.toLocaleString('ar-EG-u-nu-latn')} طن ${String(grandKg).padStart(3,'0')} كجم`, color: 'var(--success)' },
             { label: 'إجمالي المرفوضات', value: `${Number(grandRej).toFixed(3)} طن`, color: 'var(--danger)' },
             { label: 'عدد التسجيلات', value: `${totalEntries} سجل`, color: 'var(--brand)' },
             { label: 'عدد الأيام', value: `${days.length} يوم`, color: 'var(--text-muted)' },
@@ -224,7 +224,7 @@ export default function DetailedDeliveryReport() {
                       {format(new Date(dateKey), 'EEEE')}
                     </span>
                     <span className="badge badge-success" style={{ fontSize: '0.75rem' }}>
-                      {dayTon.toLocaleString('ar-EG')} طن {String(dayKg).padStart(3,'0')} كجم
+                      {dayTon.toLocaleString('ar-EG-u-nu-latn')} طن {String(dayKg).padStart(3,'0')} كجم
                     </span>
                     {dayRej > 0 && (
                       <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>

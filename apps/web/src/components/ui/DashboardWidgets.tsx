@@ -155,7 +155,7 @@ export function AuthorityCards({ data, isNational }: { data: any[], isNational: 
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
               >
                 <div style={{ fontSize: '0.8rem', fontWeight: 800, color: pal.label, marginBottom: '0.65rem', lineHeight: 1.3 }}>{auth.name}</div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: pal.num, lineHeight: 1 }}>{auth.totalTon.toLocaleString('ar-EG')}</div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: pal.num, lineHeight: 1 }}>{auth.totalTon.toLocaleString('ar-EG-u-nu-latn')}</div>
                 <div style={{ fontSize: '0.72rem', color: pal.label, marginTop: '0.25rem', opacity: 0.8 }}>طن مستلم</div>
                 {auth.rejectedTon > 0 && <div style={{ fontSize: '0.72rem', color: '#dc2626', marginTop: '0.2rem', fontWeight: 700 }}>⚠ مرفوض: {auth.rejectedTon} ط</div>}
                 <div style={{ fontSize: '0.68rem', color: pal.label, opacity: 0.7 }}>{auth.sites} موقع</div>
@@ -198,12 +198,12 @@ export function AuthorityCards({ data, isNational }: { data: any[], isNational: 
             <div style={{ fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.75rem', fontSize: '0.88rem' }}>{auth.name}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#1976d2', lineHeight: 1 }}>{auth.totalTon.toLocaleString('ar-EG')}</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#1976d2', lineHeight: 1 }}>{auth.totalTon.toLocaleString('ar-EG-u-nu-latn')}</div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>طن مستلم</div>
               </div>
               {auth.rejectedTon > 0 && (
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#d32f2f' }}>{auth.rejectedTon.toLocaleString('ar-EG')}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#d32f2f' }}>{auth.rejectedTon.toLocaleString('ar-EG-u-nu-latn')}</div>
                   <div style={{ fontSize: '0.72rem', color: '#ef9a9a' }}>طن مرفوض</div>
                 </div>
               )}

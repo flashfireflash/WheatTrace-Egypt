@@ -96,10 +96,10 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.15)', borderRadius: 'var(--r-md)', padding: '0.5rem 1rem' }}>
               <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>
-                {now.toLocaleDateString('ar-EG', { weekday: 'long' })}
+                {now.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long' })}
               </div>
               <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>
-                {now.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {now.toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem' }}>
           <StatCard icon={Warehouse}      label={t.totalSites}    value={stats?.totalSites}           color="green" delay={1} />
           <StatCard icon={Activity}       label={t.activeToday}   value={stats?.activeSitesToday}     color="blue"  delay={2} />
-          <StatCard icon={Wheat}          label={t.totalReceived} value={`${(stats?.totalReceivedTons ?? 0).toLocaleString('ar-EG')} طن`} color="amber" delay={3} />
+          <StatCard icon={Wheat}          label={t.totalReceived} value={`${(stats?.totalReceivedTons ?? 0).toLocaleString('ar-EG-u-nu-latn')} طن`} color="amber" delay={3} />
           <StatCard icon={Users}          label={t.users}         value={stats?.totalUsers}            color="green" delay={4} />
         </div>
       )}
@@ -320,7 +320,7 @@ function ManagerSummaryWidget({ isNational }: { isNational: boolean }) {
                   {auth.name}
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 900, color: pal.num, lineHeight: 1 }}>
-                  {auth.totalTon.toLocaleString('ar-EG')}
+                  {auth.totalTon.toLocaleString('ar-EG-u-nu-latn')}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: pal.label, marginTop: '0.25rem', opacity: 0.8 }}>طن مستلم</div>
               </div>
@@ -363,14 +363,14 @@ function ManagerSummaryWidget({ isNational }: { isNational: boolean }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#1976d2', lineHeight: 1 }}>
-                    {tot.toLocaleString('ar-EG')}
+                    {tot.toLocaleString('ar-EG-u-nu-latn')}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>طن مستلم</div>
                 </div>
                 {rej > 0 && (
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: '1rem', fontWeight: 800, color: '#d32f2f' }}>
-                      {rej.toLocaleString('ar-EG')}
+                      {rej.toLocaleString('ar-EG-u-nu-latn')}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: '#ef9a9a' }}>طن مرفوض</div>
                   </div>

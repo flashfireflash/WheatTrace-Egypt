@@ -94,7 +94,7 @@ export default function InteractiveMap({ sites }: MapProps) {
                       <span style={{ fontWeight: 700, color: '#1f2937' }}>
                         {(() => {
                           const capKg = site.correctedCapacityKg ?? site.capacityKg;
-                          return capKg > 0 ? `${Math.round(capKg / 1000).toLocaleString('ar-EG')} طن` : '—';
+                          return capKg > 0 ? `${Math.round(capKg / 1000).toLocaleString('ar-EG-u-nu-latn')} طن` : '—';
                         })()}
                       </span>
                     </div>
@@ -105,7 +105,7 @@ export default function InteractiveMap({ sites }: MapProps) {
                         {(() => {
                           const kg = site.totalReceivedKg ?? 0;
                           return kg > 0
-                            ? `${Math.floor(kg / 1000).toLocaleString('ar-EG')} طن ${kg % 1000} كجم`
+                            ? `${Math.floor(kg / 1000).toLocaleString('ar-EG-u-nu-latn')} طن ${kg % 1000} كجم`
                             : '—';
                         })()}
                       </span>

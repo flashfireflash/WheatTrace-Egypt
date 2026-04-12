@@ -69,7 +69,7 @@ export default function MonitorDashboard() {
                 ? `نطاق المراقبة: محافظة ${user.governorateName}`
                 : 'نطاق المراقبة: جميع المحافظات'}
               {' · '}
-              {new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -91,7 +91,7 @@ export default function MonitorDashboard() {
           <div className="stat-card__icon green"><TrendingUp size={20} strokeWidth={2} /></div>
           <div style={{ flex: 1 }}>
             <div className="stat-card__value">
-              {statsLoading ? '...' : (stats?.subtotalTon ?? 0).toLocaleString('ar-EG')}
+              {statsLoading ? '...' : (stats?.subtotalTon ?? 0).toLocaleString('ar-EG-u-nu-latn')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0.25rem' }}>طن</span>
               {String(stats?.subtotalKg ?? 0).padStart(3, '0')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.25rem' }}>كجم</span>
@@ -105,7 +105,7 @@ export default function MonitorDashboard() {
           <div className="stat-card__icon red"><AlertTriangle size={20} strokeWidth={2} /></div>
           <div style={{ flex: 1 }}>
             <div className="stat-card__value">
-              {statsLoading ? '...' : (stats?.totalRejectionsTon ?? 0).toLocaleString('ar-EG')}
+              {statsLoading ? '...' : (stats?.totalRejectionsTon ?? 0).toLocaleString('ar-EG-u-nu-latn')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0.25rem' }}>طن</span>
             </div>
             <div className="stat-card__label">إجمالي الشوائب والمرفوضات اليوم</div>

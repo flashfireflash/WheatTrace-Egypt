@@ -185,11 +185,11 @@ export default function AdminSeasonManagement() {
                 {snapshots.map(s => (
                   <tr key={s.id}>
                     <td style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      {new Date(s.createdAt).toLocaleString('ar-EG')}
+                      {new Date(s.createdAt).toLocaleString('ar-EG-u-nu-latn')}
                     </td>
                     <td style={{ fontWeight: 700 }}>{s.seasonLabel}</td>
                     <td>{s.totalSites}</td>
-                    <td>{s.totalTons.toLocaleString('ar-EG')} طن</td>
+                    <td>{s.totalTons.toLocaleString('ar-EG-u-nu-latn')} طن</td>
                     <td style={{ fontSize: '0.85rem' }}>{s.createdBy}</td>
                     <td>
                       <a href={`/api/season/download/${s.downloadToken}`} target="_blank" rel="noreferrer"
@@ -336,7 +336,7 @@ export default function AdminSeasonManagement() {
                       ✅ تم إنشاء النسخة الاحتياطية بنجاح
                     </div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      {snapshotResult.totalSites} موقع — {snapshotResult.totalTons.toLocaleString('ar-EG')} طن
+                      {snapshotResult.totalSites} موقع — {snapshotResult.totalTons.toLocaleString('ar-EG-u-nu-latn')} طن
                     </div>
                     <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.75rem', gap: '0.5rem' }}
                       onClick={handleDownloadJson}>

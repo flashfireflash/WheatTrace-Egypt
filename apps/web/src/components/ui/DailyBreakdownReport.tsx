@@ -232,7 +232,7 @@ export default function DailyBreakdownReport({ fixedSiteId, fixedGovId, hideGovF
             {days.map((day: any) => {
               const dateStr = String(day.date);
               const isOpen  = expandedDays.has(dateStr);
-              const dateLabel = new Date(dateStr).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+              const dateLabel = new Date(dateStr).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' });
               const hasRejections = day.dayRejectedTon > 0;
 
               return (
@@ -364,7 +364,7 @@ export default function DailyBreakdownReport({ fixedSiteId, fixedGovId, hideGovF
               <div>
                 <div style={{ fontSize: '0.8rem', color: '#6ee7b7', fontWeight: 600 }}>الإجمالي الكلي خلال الفترة</div>
                 <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1 }}>
-                  {data.grandTotalTon.toLocaleString('ar-EG')} <span style={{ fontSize: '1rem', color: '#6ee7b7' }}>طن</span>
+                  {data.grandTotalTon.toLocaleString('ar-EG-u-nu-latn')} <span style={{ fontSize: '1rem', color: '#6ee7b7' }}>طن</span>
                   {' '}{data.grandTotalKg} <span style={{ fontSize: '0.8rem', color: '#34d399' }}>كجم</span>
                 </div>
               </div>

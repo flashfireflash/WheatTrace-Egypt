@@ -101,7 +101,7 @@ function ManagerDashboard() {
           <div>
             <div style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', fontWeight: 900, color: 'white' }}>لوحة تحكم وتوجيه المحافظة</div>
             <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: '0.2rem' }}>
-              مجلس المتابعة لـ {new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}
+              مجلس المتابعة لـ {new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
           </div>
           <div className={`sync-indicator ${isConnected ? 'online' : 'offline'}`}>
@@ -116,7 +116,7 @@ function ManagerDashboard() {
           <div className="stat-card__icon green"><TrendingUp size={20} strokeWidth={2} /></div>
           <div style={{ flex: 1 }}>
             <div className="stat-card__value">
-              {stats?.subtotalTon?.toLocaleString('ar-EG') ?? '—'}
+              {stats?.subtotalTon?.toLocaleString('en-US') ?? '—'}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0.25rem' }}>طن</span>
               {String(stats?.subtotalKg ?? 0).padStart(3, '0')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.25rem' }}>كجم</span>
@@ -128,7 +128,7 @@ function ManagerDashboard() {
           <div className="stat-card__icon red"><AlertTriangle size={20} strokeWidth={2} /></div>
           <div style={{ flex: 1 }}>
             <div className="stat-card__value">
-              {stats?.totalRejectionsTon?.toLocaleString('ar-EG') ?? '—'}
+              {stats?.totalRejectionsTon?.toLocaleString('en-US') ?? '0'}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0.25rem' }}>طن</span>
             </div>
             <div className="stat-card__label">إجمالي الشوائب والمرفوضات اليوم</div>

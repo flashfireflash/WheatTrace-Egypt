@@ -113,7 +113,7 @@ export default function LocalTruckCalculatorModal({ isOpen, onClose, selectedDat
   const handlePrint = () => {
     const siteName = assignment?.siteName ?? '—';
     const govName  = assignment?.governorateName ?? '';
-    const dateFormatted = new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const dateFormatted = new Date(selectedDate).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
     const allGrades = [
@@ -235,7 +235,7 @@ export default function LocalTruckCalculatorModal({ isOpen, onClose, selectedDat
   // مشاركة نصية سريعة
   const handleShare = async () => {
     const siteName = assignment?.siteName ?? '—';
-    const dateStr = new Date(selectedDate).toLocaleDateString('ar-EG');
+    const dateStr = new Date(selectedDate).toLocaleDateString('ar-EG-u-nu-latn');
     let txt = `🌾 تقرير الحاسبة — منظومة استلام القمح المحلى\n`;
     txt += `المفتش: ${user?.name ?? '—'}\n`;
     txt += `الموقع: ${siteName}\n`;

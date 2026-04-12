@@ -73,7 +73,7 @@ export default function AdminReports() {
         <div style={{ fontSize: '0.9rem', color: '#555' }}>الهيئة القومية لسلامة الغذاء — منظومة استلام القمح المحلي 2026</div>
         <div style={{ fontSize: '1.4rem', fontWeight: 900, marginTop: '0.2rem' }}>بيان إجمالي كميات القمح المستلمة</div>
         <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.2rem' }}>
-          تاريخ الإصدار: {new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
+          تاريخ الإصدار: {new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' })}
           <br />
           الفترة: من {startDate} إلى {endDate}
         </div>

@@ -146,21 +146,21 @@ export default function AdminReportsInspectorDays({ fixedGovId }: { fixedGovId?:
           <div className="stat-card fade-in">
             <div className="stat-card__icon green"><CheckSquare size={20} /></div>
             <div style={{ flex: 1 }}>
-              <div className="stat-card__value">{colTotals.grandTotal.toLocaleString('ar-EG')}</div>
+              <div className="stat-card__value">{colTotals.grandTotal.toLocaleString('ar-EG-u-nu-latn')}</div>
               <div className="stat-card__label">إجمالي أيام العمل</div>
             </div>
           </div>
           <div className="stat-card fade-in stagger-1">
             <div className="stat-card__icon" style={{ background: '#ede9fe', color: '#7c3aed' }}><Users size={20} /></div>
             <div style={{ flex: 1 }}>
-              <div className="stat-card__value">{uniqueInspectors.toLocaleString('ar-EG')}</div>
+              <div className="stat-card__value">{uniqueInspectors.toLocaleString('ar-EG-u-nu-latn')}</div>
               <div className="stat-card__label">عدد المفتشين العاملين</div>
             </div>
           </div>
           <div className="stat-card fade-in stagger-2">
             <div className="stat-card__icon" style={{ background: '#fef3c7', color: '#d97706' }}><Briefcase size={20} /></div>
             <div style={{ flex: 1 }}>
-              <div className="stat-card__value">{uniqueSites.toLocaleString('ar-EG')}</div>
+              <div className="stat-card__value">{uniqueSites.toLocaleString('ar-EG-u-nu-latn')}</div>
               <div className="stat-card__label">المواقع المُغطاة</div>
             </div>
           </div>

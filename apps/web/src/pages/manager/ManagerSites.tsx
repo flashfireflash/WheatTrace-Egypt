@@ -120,12 +120,12 @@ export default function ManagerSites() {
                   </td>
                   <td style={{ fontSize: '0.85rem' }}>{s.authorityName || '—'}</td>
                   <td>
-                    <span style={{ fontWeight: 800, color: 'var(--brand)' }}>{((s.capacityKg ?? 0) / 1000).toLocaleString('ar-EG')} طن</span>
+                    <span style={{ fontWeight: 800, color: 'var(--brand)' }}>{((s.capacityKg ?? 0) / 1000).toLocaleString('ar-EG-u-nu-latn')} طن</span>
                   </td>
                   <td>
                     {(s.totalReceivedKg ?? 0) > 0 ? (
                       <span style={{ fontWeight: 700, color: 'var(--success)' }}>
-                        {Math.floor((s.totalReceivedKg) / 1000).toLocaleString('ar-EG')} طن {(s.totalReceivedKg % 1000).toString().padStart(3,'0')} كجم
+                        {Math.floor((s.totalReceivedKg) / 1000).toLocaleString('ar-EG-u-nu-latn')} طن {(s.totalReceivedKg % 1000).toString().padStart(3,'0')} كجم
                       </span>
                     ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>لم يُسجَّل بعد</span>}
                   </td>

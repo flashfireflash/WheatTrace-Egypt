@@ -47,7 +47,7 @@ export default function MonitorSummaryPage() {
               📊 الملخص الوطني الشامل
             </div>
             <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)', marginTop: '0.15rem' }}>
-              نطاق: جميع المحافظات — {new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              نطاق: جميع المحافظات — {new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -68,7 +68,7 @@ export default function MonitorSummaryPage() {
           <div className="stat-card__icon green"><TrendingUp size={20} strokeWidth={2} /></div>
           <div style={{ flex: 1 }}>
             <div className="stat-card__value">
-              {isLoading ? '...' : (stats?.subtotalTon ?? 0).toLocaleString('ar-EG')}
+              {isLoading ? '...' : (stats?.subtotalTon ?? 0).toLocaleString('ar-EG-u-nu-latn')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0.25rem' }}>طن</span>
               {String(stats?.subtotalKg ?? 0).padStart(3, '0')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.25rem' }}>كجم</span>
@@ -81,7 +81,7 @@ export default function MonitorSummaryPage() {
           <div className="stat-card__icon red"><AlertTriangle size={20} strokeWidth={2} /></div>
           <div style={{ flex: 1 }}>
             <div className="stat-card__value">
-              {isLoading ? '...' : (stats?.totalRejectionsTon ?? 0).toLocaleString('ar-EG')}
+              {isLoading ? '...' : (stats?.totalRejectionsTon ?? 0).toLocaleString('ar-EG-u-nu-latn')}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0.25rem' }}>طن</span>
             </div>
             <div className="stat-card__label">إجمالي الشوائب والمرفوضات اليوم</div>

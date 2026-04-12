@@ -127,6 +127,7 @@ export default function InspectorReports() {
       {activeTab === 'daily' && (
         <DailyBreakdownReport
           hideGovFilter
+          hideAuthFilter
           allowedSites={inspectorSites.length > 0 ? inspectorSites : undefined}
           title="تقرير التوريد اليومي التفصيلي"
         />

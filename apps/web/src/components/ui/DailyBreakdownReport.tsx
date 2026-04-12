@@ -14,6 +14,8 @@ interface DailyBreakdownProps {
   fixedGovId?: string;
   /** إخفاء فلتر المحافظة */
   hideGovFilter?: boolean;
+  /** إخفاء فلتر الجهة */
+  hideAuthFilter?: boolean;
   /** قائمة مواقع مسموحة فقط — لتقييد القائمة المنسدلة (للمفتش) */
   allowedSites?: { id: string; name: string }[];
   /** عنوان التقرير */
@@ -31,7 +33,7 @@ const tdStyle: React.CSSProperties = {
   fontSize: '0.85rem', textAlign: 'center', color: '#1e293b'
 };
 
-export default function DailyBreakdownReport({ fixedSiteId, fixedGovId, hideGovFilter = false, allowedSites, title = 'التوريد اليومي التفصيلي' }: DailyBreakdownProps) {
+export default function DailyBreakdownReport({ fixedSiteId, fixedGovId, hideGovFilter = false, hideAuthFilter = false, allowedSites, title = 'التوريد اليومي التفصيلي' }: DailyBreakdownProps) {
   const { user } = useAuthStore();
   const today    = new Date().toISOString().slice(0, 10);
   const firstDay = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
@@ -167,13 +169,15 @@ export default function DailyBreakdownReport({ fixedSiteId, fixedGovId, hideGovF
           )}
 
           {/* فلتر الجهة */}
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>الجهة</label>
-            <select className="input" value={authId} onChange={e => setAuthId(e.target.value)} style={{ fontSize: '0.85rem' }}>
-              <option value="">الكل</option>
-              {authorities.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          </div>
+          {!hideAuthFilter && (
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>الجهة</label>
+              <select className="input" value={authId} onChange={e => setAuthId(e.target.value)} style={{ fontSize: '0.85rem' }}>
+                <option value="">الكل</option>
+                {authorities.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* فلتر الموقع — يُخفى إذا كان fixedSiteId */}
           {!fixedSiteId && (

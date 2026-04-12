@@ -422,7 +422,7 @@ export default function InspectorEntry() {
           </button>
 
           {showSummary && (
-            <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+            <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '0.5rem' }}>
               <GradeDisplay ton={wheat22_5.ton} kg={wheat22_5.kg} grade="22.5" />
               <GradeDisplay ton={wheat23.ton}   kg={wheat23.kg}   grade="23" />
               <GradeDisplay ton={wheat23_5.ton} kg={wheat23_5.kg} grade="23.5" />

@@ -500,7 +500,6 @@ export default function InspectorEntry() {
               <textarea
                 className="input"
                 rows={2}
-                placeholder="تفاصيل التبخير، توجيهات أمنية، حوادث السير..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 style={{ resize: 'none', minHeight: 'auto' }}

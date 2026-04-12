@@ -95,45 +95,49 @@ public class AnnouncementsController : ControllerBase
     [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> CreateAnnouncement([FromBody] CreateAnnouncementRequest req)
     {
-        if (string.IsNullOrWhiteSpace(req.Message)) return BadRequest();
+        try {
+            if (string.IsNullOrWhiteSpace(req.Message)) return BadRequest(new { error = "نص الإعلان مطلوب" });
 
-        // التحقق من اكتمال بيانات الإعلان المتكرر
-        if (req.IsRecurring && (req.RecurringStartTime == null || req.RecurringEndTime == null))
-            return BadRequest(new { error = "الإعلانات الدورية تتطلب تحديد وقت البداية والنهاية." });
+            TimeSpan? parsedStartTime = null;
+            TimeSpan? parsedEndTime = null;
 
-        // حساب وقت انتهاء الصلاحية من المدة الزمنية إذا لم يُرسَل ExpiresAt مباشرة
-        DateTime? expiresAt = req.ExpiresAt?.ToUniversalTime();
-        if (expiresAt == null && req.DurationHours.HasValue && req.DurationHours > 0)
-        {
-            var startPoint = req.ScheduledFor?.ToUniversalTime() ?? DateTime.UtcNow;
-            expiresAt = startPoint.AddHours(req.DurationHours.Value);
+            if (req.IsRecurring) {
+                if (string.IsNullOrWhiteSpace(req.RecurringStartTime) || string.IsNullOrWhiteSpace(req.RecurringEndTime))
+                    return BadRequest(new { error = "الإعلانات الدورية تتطلب تحديد وقت البداية والنهاية." });
+                
+                if (TimeSpan.TryParse(req.RecurringStartTime, out var st)) parsedStartTime = st;
+                if (TimeSpan.TryParse(req.RecurringEndTime, out var et)) parsedEndTime = et;
+            }
+
+            DateTime? expiresAt = req.ExpiresAt?.ToUniversalTime();
+            if (expiresAt == null && req.DurationHours.HasValue && req.DurationHours > 0)
+            {
+                var startPoint = req.ScheduledFor?.ToUniversalTime() ?? DateTime.UtcNow;
+                expiresAt = startPoint.AddHours(req.DurationHours.Value);
+            }
+
+            var announcement = new Announcement
+            {
+                Id                 = Guid.NewGuid(),
+                Message            = req.Message,
+                IsActive           = true,
+                ScheduledFor       = req.ScheduledFor?.ToUniversalTime(),
+                ExpiresAt          = expiresAt,
+                IsRecurring        = req.IsRecurring,
+                RecurringStartTime = parsedStartTime,
+                RecurringEndTime   = parsedEndTime,
+                CreatedById        = _currentUser.UserId
+            };
+
+            _db.Announcements.Add(announcement);
+            await _db.SaveChangesAsync();
+            await _audit.LogAsync("Create", "Announcement", announcement.Id, null, new { req.Message, req.IsRecurring });
+            return Ok(announcement);
+        } catch (Exception ex) {
+            return BadRequest(new { error = "خادم الويب: " + ex.InnerException?.Message ?? ex.Message });
         }
-
-        var announcement = new Announcement
-        {
-            Id                 = Guid.NewGuid(),
-            Message            = req.Message,
-            IsActive           = true,
-            ScheduledFor       = req.ScheduledFor?.ToUniversalTime(),
-            ExpiresAt          = expiresAt,
-            IsRecurring        = req.IsRecurring,
-            RecurringStartTime = req.RecurringStartTime,
-            RecurringEndTime   = req.RecurringEndTime,
-            CreatedById        = _currentUser.UserId
-        };
-
-        _db.Announcements.Add(announcement);
-        await _db.SaveChangesAsync();
-
-        // تسجيل العملية في سجل التدقيق
-        await _audit.LogAsync("Create", "Announcement", announcement.Id, null,
-            new { req.Message, req.IsRecurring });
-        return Ok(announcement);
     }
 
-    /// <summary>
-    /// حذف إعلان نهائياً - يتطلب صلاحيات المدير فأعلى.
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> DeleteAnnouncement(Guid id)
@@ -152,10 +156,10 @@ public class AnnouncementsController : ControllerBase
 // نموذج بيانات إنشاء إعلان جديد
 public record CreateAnnouncementRequest(
     string    Message,
-    DateTime? ScheduledFor       = null,  // وقت النشر المجدوَل (null = فوري)
-    DateTime? ExpiresAt          = null,  // وقت انتهاء الصلاحية
-    double?   DurationHours      = null,  // المدة بالساعات (بديل عن ExpiresAt)
-    bool      IsRecurring        = false, // هل يتكرر يومياً؟
-    TimeSpan? RecurringStartTime = null,  // وقت بداية الظهور اليومي
-    TimeSpan? RecurringEndTime   = null   // وقت نهاية الظهور اليومي
+    DateTime? ScheduledFor       = null,
+    DateTime? ExpiresAt          = null,
+    double?   DurationHours      = null,
+    bool      IsRecurring        = false,
+    string?   RecurringStartTime = null,
+    string?   RecurringEndTime   = null
 );

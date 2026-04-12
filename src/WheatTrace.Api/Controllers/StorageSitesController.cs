@@ -85,7 +85,7 @@ public class StorageSitesController : ControllerBase
     // ====== Admin CRUD ======
     
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> Create([FromBody] CreateStorageSiteRequest req)
     {
         var site = new StorageSite
@@ -96,7 +96,7 @@ public class StorageSitesController : ControllerBase
             DistrictId = req.DistrictId,
             AuthorityId = req.AuthorityId,
             CapacityKg = req.CapacityKg,
-            Status = SiteStatus.Active,
+            Status = SiteStatus.Closed,
             IsShiftEnabled = req.IsShiftEnabled,
             Latitude = req.Latitude,
             Longitude = req.Longitude,
@@ -113,7 +113,7 @@ public class StorageSitesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> Update(Guid id, [FromBody] UpdateStorageSiteRequest req)
     {
         var site = await _db.StorageSites.FindAsync(id);
@@ -140,21 +140,16 @@ public class StorageSitesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<ActionResult> Delete(Guid id)
     {
-        var site = await _db.StorageSites
-            .Include(s => s.DailyEntries)
-            .FirstOrDefaultAsync(s => s.Id == id);
+        var site = await _db.StorageSites.Include(s => s.DailyEntries).Include(s => s.LifecycleEvents).FirstOrDefaultAsync(s => s.Id == id);
             
         if (site is null) return NotFound(new { message = "الموقع غير موجود" });
 
         var hasAssignments = await _db.InspectorAssignments.AnyAsync(a => a.SiteId == id);
 
-        if (site.DailyEntries.Any() || hasAssignments)
-            return BadRequest(new { message = "لا يمكن حذف الموقع لارتباطه بسجلات مسجلة أو تعيينات." });
-
-        _db.StorageSites.Remove(site);
+        if (site.DailyEntries.Any() || hasAssignments) return BadRequest(new { message = "لا يمكن حذف الموقع لارتباطه بسجلات مسجلة أو تعيينات." }); if (site.LifecycleEvents.Any()) { _db.SiteLifecycleEvents.RemoveRange(site.LifecycleEvents); } _db.StorageSites.Remove(site);
         await _db.SaveChangesAsync();
         return Ok(new { message = "تم الحذف بنجاح" });
     }

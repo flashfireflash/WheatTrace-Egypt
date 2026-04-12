@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
-import { Database, Search, Users, X, Loader2, CheckCircle, AlertTriangle, MapPin, Calendar } from 'lucide-react';
+import { Database, Search, Users, X, Loader2, CheckCircle, AlertTriangle, MapPin, Calendar, History, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import SiteLifecycleModal from '../../components/ui/SiteLifecycleModal';
 import { format } from 'date-fns';
 
 /**
@@ -17,6 +18,7 @@ export default function ManagerSites() {
   const [search, setSearch] = useState('');
   const [assignModal, setAssignModal] = useState<{ siteId: string; siteName: string } | null>(null);
   const [form, setForm] = useState({ inspectorId: '', date: format(new Date(), 'yyyy-MM-dd'), endDate: '', shiftId: '' });
+  const [lifecycleSite, setLifecycleSite] = useState<{ id: string; name: string; status: string } | null>(null);
 
   // مواقع التخزين — الباك إند يفلتر بمحافظة المدير تلقائياً من التوكن
   const { data: sites = [], isLoading } = useQuery<any[]>({
@@ -54,6 +56,12 @@ export default function ManagerSites() {
       setForm({ inspectorId: '', date: format(new Date(), 'yyyy-MM-dd'), endDate: '', shiftId: '' });
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'حدث خطأ أثناء التعيين'),
+  });
+
+  const { mutate: deleteSite, isPending: deleting } = useMutation({
+    mutationFn: (id: string) => api.delete('/storage-sites/' + id),
+    onSuccess: () => { toast.success('تم الحذف'); qc.invalidateQueries({ queryKey: ['manager-sites'] }); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'لا يمكن مسح الموقع لوجود ارتباطات')
   });
 
   const filtered = useMemo(() =>
@@ -100,6 +108,7 @@ export default function ManagerSites() {
                 <th>المستلَم إجمالاً</th>
                 <th>الحالة</th>
                 <th>تعيين مفتش</th>
+<th>إجراءات الإدارة</th>
               </tr>
             </thead>
             <tbody>
@@ -129,12 +138,30 @@ export default function ManagerSites() {
                       <Users size={15} /> تعيين مفتش
                     </button>
                   </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button className="btn btn-ghost btn-icon btn-sm" title="دورة حياة الموقع" onClick={() => setLifecycleSite({ id: s.id, name: s.name, status: s.status })} style={{ color: 'var(--brand)' }}>
+                        <History size={16} />
+                      </button>
+                      <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--danger)' }} onClick={() => confirm('سيتم حذف الموقع نهائياً. متأكد؟') && deleteSite(s.id)} disabled={deleting}><Trash2 size={15} /></button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {lifecycleSite && (
+        <SiteLifecycleModal
+          isOpen={!!lifecycleSite}
+          onClose={() => setLifecycleSite(null)}
+          siteId={lifecycleSite.id}
+          siteName={lifecycleSite.name}
+          currentStatus={lifecycleSite.status as any}
+        />
+      )}
 
       {/* نافذة تعيين مفتش */}
       {assignModal && (

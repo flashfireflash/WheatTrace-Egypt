@@ -113,6 +113,13 @@ if (app.Environment.IsDevelopment())
     await WheatTrace.Api.SeedTestUsers.SeedAsync(app.Services);
 }
 
+// ---- One-time production seed (triggered by env var) ---------
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SEED_PRODUCTION")))
+{
+    await WheatTrace.Api.SeedProduction.RunAsync(app.Services);
+    Console.WriteLine("⚠️ SEED_PRODUCTION complete. Remove the env var now!");
+}
+
 // ---- Pipeline ----------------------------------------------
 app.UseExceptionHandler();
 

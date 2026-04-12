@@ -351,8 +351,8 @@ export default function InspectorEntry() {
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-primary)' }}>{formatTon(totalReceivedKg)}</div>
             </div>
             <div style={{ background: '#fef2f2', padding: '0.5rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>المُصرَّف لصالح المطاحن</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ef4444' }}>{formatTon(transferredOutKg)}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>المرفوض والشوائب (لليوم)</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ef4444' }}>{formatTon((rejection?.totalRejectionTon || 0) * 1000)}</div>
             </div>
           </div>
 

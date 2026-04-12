@@ -442,7 +442,7 @@ export default function InspectorEntry() {
         <form onSubmit={e => { e.preventDefault(); isOnline ? save() : saveOffline(); }} className="fade-in stagger-4">
           <div className="card">
             <h3 style={{ fontSize: '1.1rem', margin: '0 0 1.25rem', fontWeight: 800, textAlign: 'center' }}>
-              ⚖️ توثيق استلام الحمولات القامحينية
+              ⚖️ توثيق استلام القمح المحلي
             </h3>
 
             {/* أدوات الإدخال التفصيلية للدرجات مع ربط الحالة المركزية */}

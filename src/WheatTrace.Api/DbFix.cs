@@ -6,49 +6,55 @@ using WheatTrace.Domain.Entities;
 using WheatTrace.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
-public class CleanupWork {
+public class TestScript {
     public static async System.Threading.Tasks.Task Run(IServiceProvider sp) {
         using var scope = sp.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<WheatTraceDbContext>();
-        
-        var sites = await db.StorageSites.ToListAsync();
-        foreach(var site in sites) {
-            if (site.Name != "صومعة الخارجة" && site.Name != "صومعة شرق العوينات") {
-                site.Status = SiteStatus.Closed;
-            } else {
-                site.Status = SiteStatus.Active;
-            }
-        }
-        await db.SaveChangesAsync();
-        
-        // Ensure lifecycle events exist for kharga and oweinat
-        var kharga = sites.FirstOrDefault(s => s.Name == "صومعة الخارجة");
-        var oweinat = sites.FirstOrDefault(s => s.Name == "صومعة شرق العوينات");
-        
-        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin);
-        var adminId = adminUser?.Id ?? Guid.Empty;
+            
+        Console.WriteLine("---- STARTING TEST ----");
 
-        if (kharga != null) {
-            var exists = await db.SiteLifecycleEvents.AnyAsync(s => s.SiteId == kharga.Id && s.EventType == SiteEventType.Opened);
-            if (!exists) {
-                db.SiteLifecycleEvents.Add(new SiteLifecycleEvent {
-                    SiteId = kharga.Id, EventType = SiteEventType.Opened, EventDate = new DateOnly(2026, 4, 8),
-                    Reason = "بداية الموسم", RecordedById = adminId, StockSnapshotKg = 0
-                });
+        var site = await db.StorageSites.Include(s => s.DailyEntries).Include(s => s.LifecycleEvents).FirstOrDefaultAsync(s => s.Name.Contains("تجميع"));
+        
+        if (site == null) {
+            Console.WriteLine("No site to test deletion");
+        } else {
+            Console.WriteLine("Testing deletion for site: " + site.Name);
+            var hasAssignments = await db.InspectorAssignments.AnyAsync(a => a.SiteId == site.Id);
+            Console.WriteLine("Has Assignments: " + hasAssignments);
+            Console.WriteLine("Has DailyEntries: " + site.DailyEntries.Any());
+            Console.WriteLine("Has LifecycleEvents: " + site.LifecycleEvents.Count);
+            
+            if (hasAssignments || site.DailyEntries.Any()) {
+                Console.WriteLine("CANNOT DELETE SITE (Business Logic Error: hasAssignments or DailyEntries)");
+            } else {
+                Console.WriteLine("TRYING DELETE...");
+                try {
+                    db.SiteLifecycleEvents.RemoveRange(site.LifecycleEvents);
+                    db.StorageSites.Remove(site);
+                    await db.SaveChangesAsync();
+                    Console.WriteLine("DELETED SUCCESSFULLY");
+                } catch(Exception ex) {
+                    Console.WriteLine("DELETE DB ERROR: " + ex.Message + " - " + ex.InnerException?.Message);
+                }
             }
         }
         
-        if (oweinat != null) {
-            var exists = await db.SiteLifecycleEvents.AnyAsync(s => s.SiteId == oweinat.Id && s.EventType == SiteEventType.Opened);
-            if (!exists) {
-                db.SiteLifecycleEvents.Add(new SiteLifecycleEvent {
-                    SiteId = oweinat.Id, EventType = SiteEventType.Opened, EventDate = new DateOnly(2026, 4, 12),
-                    Reason = "بداية الموسم", RecordedById = adminId, StockSnapshotKg = 0
-                });
-            }
+        try {
+            var a = new Announcement {
+                Id = Guid.NewGuid(),
+                Message = "Test message",
+                CreatedById = (await db.Users.FirstAsync(u => u.Role == UserRole.GovernorateManager)).Id,
+                IsActive = true
+            };
+            db.Announcements.Add(a);
+            await db.SaveChangesAsync();
+            Console.WriteLine("Announcement successfully saved!");
+            db.Announcements.Remove(a);
+            await db.SaveChangesAsync();
+        } catch (Exception ex) {
+            Console.WriteLine("Error creating announcement: " + ex.Message + " " + ex.InnerException?.Message);
         }
         
-        await db.SaveChangesAsync();
-        Console.WriteLine("Done!"); Environment.Exit(0);
+        Console.WriteLine("---- DONE TEST ----");
     }
 }

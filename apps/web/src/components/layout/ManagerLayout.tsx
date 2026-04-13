@@ -121,7 +121,7 @@ export default function ManagerLayout() {
           <button
             onClick={() => { logout(); navigate('/login'); }}
             className="btn btn-ghost"
-            style={{ width: '100%', justifycontent: 'flex-start', color: 'var(--sidebar-muted)', border: 'none', background: 'var(--sidebar-hover)', fontSize: '0.85rem' }}
+            style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--sidebar-muted)', border: 'none', background: 'var(--sidebar-hover)', fontSize: '0.85rem' }}
           >
             <LogOut size={16} /> {t.logout}
           </button>

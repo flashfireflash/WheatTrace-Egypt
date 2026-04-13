@@ -105,7 +105,7 @@ function ManagerDashboard() {
             </div>
           </div>
           <div className={`sync-indicator ${isConnected ? 'online' : 'offline'}`}>
-            {isConnected ? 'بث البيانات النشط' : 'انقطاع البث'}
+            {isConnected ? 'بث مباشر نشط' : 'تحديث دوري'}
           </div>
         </div>
       </div>

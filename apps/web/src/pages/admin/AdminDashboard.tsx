@@ -53,14 +53,9 @@ export default function AdminDashboard() {
       const usersArr = Array.isArray(users.data) ? users.data : (users.data?.items ?? []);
       const totalsArr: any[] = Array.isArray(detailedTotals.data) ? detailedTotals.data : [];
 
-      // الإجمالي الحقيقي من TotalReceivedKg، وليس من CurrentStockKg العشوائي
       let totalReceivedKg = 0;
-      totalsArr.forEach((gov: any) => {
-        gov.authorities?.forEach((auth: any) => {
-          auth.sites?.forEach((s: any) => {
-            totalReceivedKg += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
-          });
-        });
+      sitesArr.forEach((s: any) => {
+        totalReceivedKg += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
       });
 
       return {

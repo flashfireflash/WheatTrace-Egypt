@@ -14,8 +14,7 @@ public static class SeedRealData
         // We only seed if there are no sites currently or if we want to add to existing
         if (await db.StorageSites.AnyAsync(s => s.Name == "صومعة الخارجة" || s.Name == "صومعة شرق العوينات"))
         {
-            // Already seeded sites, but let's make sure mock entries are created below
-            goto MockDataSection;
+            return;
         }
 
         var rand = new Random();
@@ -176,74 +175,9 @@ public static class SeedRealData
         Console.WriteLine($"✅ Seeded {allSites.Count} authentic wheat storage sites from MoS records.");
 
         // ==========================================
-MockDataSection:
+        // ==========================================
         // 4. MOCK DATA: Seed Daily Entries for صومعة الخارجة (Moved before early return)
         // ==========================================
-        var khargaSite = await db.StorageSites.FirstOrDefaultAsync(s => s.Name == "صومعة الخارجة");
-        var inspectorUser = await db.Users.FirstOrDefaultAsync(u => u.Role == Domain.Enums.UserRole.Inspector);
-        
-        if (khargaSite != null && inspectorUser != null)
-        {
-            var existingEntries = await db.DailyEntries.AnyAsync(e => e.SiteId == khargaSite.Id);
-            if (!existingEntries)
-            {
-                var startDate = new DateOnly(2026, 4, 5);
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var days = today.DayNumber - startDate.DayNumber;
-                var randMock = new Random();
-
-                for (int i = 0; i <= days; i++)
-                {
-                    var currentDate = startDate.AddDays(i);
-                    var entry = new DailyEntry
-                    {
-                        Id = Guid.NewGuid(),
-                        SiteId = khargaSite.Id,
-                        Date = currentDate,
-                        InspectorId = inspectorUser.Id,
-                        Wheat23_5Ton = randMock.Next(10, 50),
-                        Wheat23_5Kg = randMock.Next(100, 900),
-                        Wheat23Ton = randMock.Next(5, 30),
-                        Wheat23Kg = randMock.Next(10, 990),
-                        Wheat22_5Ton = randMock.Next(1, 10),
-                        Wheat22_5Kg = 0,
-                        CreatedAt = DateTime.UtcNow.AddDays(-days + i),
-                        UpdatedAt = DateTime.UtcNow.AddDays(-days + i)
-                    };
-
-                    var rejTon = Math.Round((decimal)(randMock.NextDouble() * 3 + 0.1), 3);
-                    var moisture = Math.Round(rejTon * 0.4m, 3);
-                    var impurities = Math.Round(rejTon * 0.3m, 3);
-                    var insects = Math.Round(rejTon * 0.2m, 3);
-                    var sand = rejTon - moisture - impurities - insects; // باقي المجموع لضمان التساوي التام
-                    entry.Rejection = new Rejection
-                    {
-                        Id = Guid.NewGuid(),
-                        TotalRejectionTon = rejTon,
-                        MoistureTon = moisture,
-                        ImpuritiesTon = impurities,
-                        InsectDamageTon = insects,
-                        SandGravelTon = sand,
-                        TreatedQuantityTon = 0,
-                        CreatedAt = DateTime.UtcNow.AddDays(-days + i),
-                        UpdatedAt = DateTime.UtcNow.AddDays(-days + i)
-                    };
-
-                    db.DailyEntries.Add(entry);
-                }
-                
-                await db.SaveChangesAsync();
-                
-                var total = await db.DailyEntries
-                    .Where(e => e.SiteId == khargaSite.Id)
-                    .SumAsync(e => e.TotalQtyKg);
-                    
-                khargaSite.TotalReceivedKg = total;
-                khargaSite.CurrentStockKg += total;
-                await db.SaveChangesAsync();
-
-                Console.WriteLine($"✅ Seeded daily entries for صومعة الخارجة starting from {startDate} to {today}.");
-            }
-        }
+        // Disabled mock seeding for Kharga to prevent duplicate/fake data interfering with real reporting.
     }
 }

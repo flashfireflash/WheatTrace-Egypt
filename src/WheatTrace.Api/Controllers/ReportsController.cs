@@ -65,6 +65,49 @@ public class ReportsController : ControllerBase
         });
     }
 
+    [AllowAnonymous]
+    [HttpGet("fix-totals")]
+    public async Task<ActionResult> FixTotals()
+    {
+        var sites = await _db.StorageSites.Include(s => s.DailyEntries).ToListAsync();
+        int fixedCount = 0;
+        int deletedDuplicates = 0;
+
+        foreach(var s in sites)
+        {
+            if (s.Name == "مركز تجميع صومعة الخارجة" && s.DailyEntries.Any())
+            {
+                // Delete duplicate records inserted by SQL due to LIKE '%الخارجة%'
+                var toDelete = s.DailyEntries.ToList();
+                _db.DailyEntries.RemoveRange(toDelete);
+                s.TotalReceivedKg = 0;
+                s.CurrentStockKg = 0;
+                deletedDuplicates += toDelete.Count;
+                fixedCount++;
+                continue;
+            }
+
+            long trueSum = s.DailyEntries.Sum(e => 
+                (long)e.Wheat22_5Ton * 1000 + e.Wheat22_5Kg + 
+                (long)e.Wheat23Ton * 1000 + e.Wheat23Kg + 
+                (long)e.Wheat23_5Ton * 1000 + e.Wheat23_5Kg);
+
+            if (s.TotalReceivedKg != trueSum || s.CurrentStockKg != trueSum)
+            {
+                s.TotalReceivedKg = trueSum;
+                s.CurrentStockKg = trueSum; // Assuming no outbound transfers
+                fixedCount++;
+            }
+        }
+
+        if (fixedCount > 0 || deletedDuplicates > 0)
+        {
+            await _db.SaveChangesAsync();
+        }
+
+        return Ok(new { fixedCount, deletedDuplicates, message = "Databases synchronized" });
+    }
+
     /// <summary>
     /// تقرير التوريد اليومي التفصيلي خلال فترة زمنية: يُعيد صفاً لكل يوم مع كميات كل موقع والمرفوضات.
     /// RBAC: المفتش <- ادخالاته | مدير/مراقب المحافظة <- محافظتهم | النظام <- الكل.

@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isWakingUp, setIsWakingUp] = useState(false);
+  const [wakeMsg, setWakeMsg] = useState('الخادم يستيقظ من وضع السكون...');
   const navigate = useNavigate();
   const setAuthUser = useAuthStore((s) => s.login);
   const lang = useLocaleStore((s) => s.lang);
@@ -25,9 +26,25 @@ export default function LoginPage() {
   const { mutate, isPending } = useMutation({
     mutationFn: () => {
       // إذا استغرق الطلب أكثر من 4 ثوانٍ، نعرض مؤشر استيقاظ الخادم
-      const wakeTimer = setTimeout(() => setIsWakingUp(true), 4000);
+      const wakeTimer = setTimeout(() => {
+        setIsWakingUp(true);
+        // Start random message interval
+        const msgInterval = setInterval(() => {
+          const msgs = [
+            'الخادم يستيقظ من وضع السكون...',
+            'جاري تهيئة بيئة العمل...',
+            'يتم الآن الاتصال بقواعد البيانات...',
+            'الأنظمة قيد التجهيز...',
+            'جاري استرجاع بياناتك الآمنة...',
+            'قارون يجمع القمح السمين...'
+          ];
+          setWakeMsg(msgs[Math.floor(Math.random() * msgs.length)]);
+        }, 1500);
+        window.wakeMsgInterval = msgInterval as any;
+      }, 4000);
       return login(username, password).finally(() => {
         clearTimeout(wakeTimer);
+        if (window.wakeMsgInterval) clearInterval(window.wakeMsgInterval);
         setIsWakingUp(false);
       });
     },
@@ -35,20 +52,8 @@ export default function LoginPage() {
       // تفويض الدخول وتهيئة بيئة المتسخدم في التخزين المحلي
       setAuthUser(res);
       toast.success(lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login successful!');
-      let nextRoute = '/';
-      switch (res.role) {
-        case 'Admin':
-        case 'SuperAdmin':
-          nextRoute = '/admin'; break;
-        case 'GovernorateManager':
-          nextRoute = '/manager'; break;
-        case 'GeneralMonitor':
-        case 'OperationsMonitor':
-          nextRoute = '/monitor'; break;
-        case 'Inspector':
-          nextRoute = '/inspector'; break;
-      }
-      navigate('/splash', { state: { target: nextRoute }, replace: true });
+      // Navigate to root route because RoleRouter dynamically loads the correct layout
+      navigate('/splash', { state: { target: '/' }, replace: true });
     },
     onError: (err: any) => {
       const msg = err.response?.data?.message || 'اسم المستخدم أو كلمة المرور غير صحيحة';
@@ -112,7 +117,7 @@ export default function LoginPage() {
           }}>
             <Loader2 size={18} style={{ color: '#d97706', animation: 'spin 1s linear infinite', flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#92400e' }}>الخادم يستيقظ من وضع السكون...</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#92400e', transition: 'all 0.3s' }}>{wakeMsg}</div>
               <div style={{ fontSize: '0.72rem', color: '#b45309', marginTop: '2px' }}>يرجى الانتظار لحظات (قد يستغرق 30-60 ثانية)</div>
             </div>
           </div>

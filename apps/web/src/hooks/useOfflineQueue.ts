@@ -52,7 +52,7 @@ export function enqueue(item: Omit<QueueItem, 'status' | 'retryCount'>) {
   const queue = getQueue();
   // حذف السجل القديم للتاريخ نفسه (إن وُجد) قبل إضافة الجديد
   const filtered = queue.filter(q => q.date !== item.date || q.existingEntryId !== item.existingEntryId);
-  saveQueue([...filtered, { ...item, status: 'pending', retryCount: 0 }]);
+  saveQueue([...filtered, { ...item, status: 'pending' as const, retryCount: 0 }]);
 }
 
 /**
@@ -70,7 +70,7 @@ export function useOfflineQueue() {
 
     // تحديث الحالة لـ 'syncing' قبل الإرسال لمنع المزامنة المتكررة
     const current = getQueue();
-    saveQueue(current.map(q => q.status === 'pending' ? { ...q, status: 'syncing' } : q));
+    saveQueue(current.map(q => q.status === 'pending' ? { ...q, status: 'syncing' as const } : q));
 
     try {
       // إرسال دُفعة كاملة (Batch) بدلاً من طلبات فردية - أسرع وأكثر كفاءة
@@ -110,9 +110,9 @@ export function useOfflineQueue() {
           const retries = (q.retryCount || 0) + 1;
           if (retries >= 3) {
             toast.error('فشلت المزامنة المتكررة لبعض السجلات. يرجى التحقق من اتصالك وإعادة المحاولة يدوياً.', { duration: 5000 });
-            return { ...q, status: 'failed', retryCount: retries };
+            return { ...q, status: 'failed' as const, retryCount: retries };
           }
-          return { ...q, status: 'pending', retryCount: retries };
+          return { ...q, status: 'pending' as const, retryCount: retries };
         }
         return q;
       });

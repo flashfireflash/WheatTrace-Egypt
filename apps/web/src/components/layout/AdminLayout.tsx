@@ -137,8 +137,11 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const t = useT();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // إغلاق القائمة عند النقر على روابط الهاتف
+  useEffect(() => { setSidebarOpen(false); }, [window.location.pathname]);
 
   // جلب عدد طلبات التعديل المُعلّقة دورياً لعرضها في الشارة الذكية
   const { data: pendingCount = 0, refetch: refetchPending } = useQuery<number>({
@@ -163,33 +166,23 @@ export default function AdminLayout() {
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--bg-base)' }}>
 
-      {/* الشريط الجانبي الثابت (لأجهزة سطح المكتب فقط) */}
-      <aside className="sidebar" style={{ width: 252, flexShrink: 0 }}>
-        <SidebarContent user={user} t={t} onLogout={handleLogout} onClose={null} pendingCount={pendingCount} />
-      </aside>
+      {/* Drawer Overlay for Mobile */}
+      <div 
+        className={`drawer-overlay ${sidebarOpen ? 'open' : ''}`} 
+        onClick={() => setSidebarOpen(false)} 
+      />
 
-      {/* الشريط الجانبي المنبثق (خصيصاً لأجهزة المحمول) */}
-      {mobileOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex' }}>
-          <div onClick={() => setMobileOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} />
-          <aside style={{
-            position: 'relative', zIndex: 1, width: 270, maxWidth: '85vw',
-            background: 'var(--sidebar-bg)', display: 'flex', flexDirection: 'column',
-            animation: 'slideInRight 0.25s ease',
-            boxShadow: '4px 0 20px rgba(0,0,0,0.3)',
-            marginRight: 'auto', // لدعم الـ RTL في الأجهزة المحمولة
-          }}>
-            <SidebarContent user={user} t={t} onLogout={handleLogout} onClose={() => setMobileOpen(false)} pendingCount={pendingCount} />
-          </aside>
-        </div>
-      )}
+      {/* الشريط الجانبي الثابت (لأجهزة سطح المكتب والدرج للموبايل) */}
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ width: 252, flexShrink: 0 }}>
+        <SidebarContent user={user} t={t} onLogout={handleLogout} onClose={() => setSidebarOpen(false)} pendingCount={pendingCount} />
+      </aside>
 
       {/* منطقة المحتوى الرئيسية */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header className="topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {/* زر قائمة الهامبرغر يظهر فقط في شاشات المحمول لاظهار الشريط الجانبي */}
-            <button id="hamburger-btn" onClick={() => setMobileOpen(true)} className="btn btn-ghost btn-icon" style={{ display: 'none' }}>
+            <button id="hamburger-btn" onClick={() => setSidebarOpen(true)} className="btn btn-ghost btn-icon d-md-none" style={{ display: window.innerWidth <= 768 ? 'flex' : 'none' }}>
               <Menu size={20} />
             </button>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>

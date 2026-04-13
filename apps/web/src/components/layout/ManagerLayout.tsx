@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
 import {
   LogOut, LayoutDashboard, Users, ClipboardList, FileBarChart,
-  Database, ArrowLeftRight, ChevronRight, Map, BarChart3, UserPlus
+  Database, ArrowLeftRight, ChevronRight, Map, BarChart3, UserPlus, FileEdit, Menu
 } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useT } from '../../store/localeStore';
@@ -29,6 +29,7 @@ export default function ManagerLayout() {
   const qc = useQueryClient();
   const t = useT();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const initials = user?.name?.slice(0, 2) ?? 'مح';
 
   // شارة طلبات الانتداب الواردة المعلقة
@@ -48,6 +49,9 @@ export default function ManagerLayout() {
     return () => window.removeEventListener('TransferRequestUpdated', ev);
   }, [qc]);
 
+  // إغلاق القائمة الجانبية إذا تغيير المسار على الموبايل
+  useEffect(() => { setSidebarOpen(false); }, [window.location.pathname]);
+
   const navItems = [
     { to: '/',          label: 'الصفحة الرئيسية',     icon: LayoutDashboard, end: true },
     { to: '/map',       label: 'الخريطة التفاعلية',    icon: Map },
@@ -62,7 +66,13 @@ export default function ManagerLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--bg-base)' }}>
-      <aside className="sidebar" style={{ width: 252, flexShrink: 0 }}>
+      {/* Drawer Overlay for Mobile */}
+      <div 
+        className={`drawer-overlay ${sidebarOpen ? 'open' : ''}`} 
+        onClick={() => setSidebarOpen(false)} 
+      />
+
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ width: 252, flexShrink: 0 }}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-img">
             <img src="/nfsa-logo.png" alt="NFSA" style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
@@ -80,6 +90,7 @@ export default function ManagerLayout() {
               key={to}
               to={to}
               end={end}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
             >
               <Icon size={18} strokeWidth={2} />
@@ -110,7 +121,7 @@ export default function ManagerLayout() {
           <button
             onClick={() => { logout(); navigate('/login'); }}
             className="btn btn-ghost"
-            style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--sidebar-muted)', border: 'none', background: 'var(--sidebar-hover)', fontSize: '0.85rem' }}
+            style={{ width: '100%', justifycontent: 'flex-start', color: 'var(--sidebar-muted)', border: 'none', background: 'var(--sidebar-hover)', fontSize: '0.85rem' }}
           >
             <LogOut size={16} /> {t.logout}
           </button>
@@ -119,9 +130,19 @@ export default function ManagerLayout() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header className="topbar">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <span className="topbar-title">مدير المحافظة</span>
-            <span className="topbar-subtitle">{user?.governorateName ?? t.systemName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button 
+              className="btn btn-ghost btn-icon d-md-none" 
+              onClick={() => setSidebarOpen(true)}
+              style={{ display: window.innerWidth <= 768 ? 'flex' : 'none' }} /* Simple inline handler for mobile */
+              title="القائمة الجانبية"
+            >
+              <Menu size={20} />
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span className="topbar-title">مدير المحافظة</span>
+              <span className="topbar-subtitle">{user?.governorateName ?? t.systemName}</span>
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <ThemeToggle />

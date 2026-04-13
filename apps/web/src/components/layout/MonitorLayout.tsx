@@ -1,7 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { LogOut, Map, FileBarChart, LayoutDashboard, Bell, Shield, Building2, Database, Users, ArrowLeftRight, BarChart3 } from 'lucide-react';
+import { LogOut, Map, FileBarChart, LayoutDashboard, Bell, Shield, Building2, Database, Users, ArrowLeftRight, BarChart3, Menu } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 import ProfileSettingsModal from '../ui/ProfileSettingsModal';
 
@@ -22,7 +22,11 @@ export default function MonitorLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const initials = user?.name?.slice(0, 2) ?? 'مر';
+
+  // اغلاق القائمة عند النقر على الهواتف
+  useEffect(() => { setSidebarOpen(false); }, [window.location.pathname]);
 
   const navItems = [
     { to: '/', label: 'الملخص', icon: LayoutDashboard, end: true },
@@ -41,7 +45,13 @@ export default function MonitorLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--bg-base)' }}>
-      <aside className="sidebar" style={{ width: 252, flexShrink: 0 }}>
+      {/* Drawer Overlay for Mobile */}
+      <div 
+        className={`drawer-overlay ${sidebarOpen ? 'open' : ''}`} 
+        onClick={() => setSidebarOpen(false)} 
+      />
+
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ width: 252, flexShrink: 0 }}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-img">
             <img src="/nfsa-logo.png" alt="NFSA" style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
@@ -59,6 +69,7 @@ export default function MonitorLayout() {
               key={to}
               to={to}
               end={end}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
             >
               <Icon size={18} strokeWidth={2} />
@@ -93,9 +104,19 @@ export default function MonitorLayout() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header className="topbar">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <span className="topbar-title">غرفة العمليات</span>
-            <span className="topbar-subtitle">{SYSTEM_NAME}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button 
+              className="btn btn-ghost btn-icon d-md-none" 
+              onClick={() => setSidebarOpen(true)}
+              style={{ display: window.innerWidth <= 768 ? 'flex' : 'none' }}
+              title="القائمة الجانبية"
+            >
+              <Menu size={20} />
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span className="topbar-title">غرفة العمليات</span>
+              <span className="topbar-subtitle">{SYSTEM_NAME}</span>
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <ThemeToggle />

@@ -87,7 +87,7 @@ export default function AdminMap() {
   const isUrl = (text: string) => /^https?:\/\//i.test(text.trim());
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: 'calc(100vh - 120px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 'calc(100dvh - 120px)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>الخريطة التفاعلية</h1>
@@ -96,26 +96,25 @@ export default function AdminMap() {
       </div>
 
       {/* Filters */}
-      <div className="card" style={{ padding: '1rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="card" style={{ padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', fontWeight: 800 }}>
           <Filter size={18} /> تصفية الخريطة:
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <select className="input" style={{ width: 'auto', padding: '0.4rem 2rem 0.4rem 1rem' }} value={filterState} onChange={e => setFilterState(e.target.value as any)}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: '1 1 auto' }}>
+          <select className="input" style={{ width: 'auto', flexGrow: 1, padding: '0.4rem 2rem 0.4rem 1rem' }} value={filterState} onChange={e => setFilterState(e.target.value as any)}>
             <option value="all">كل المواقع (مفتوح ومغلق)</option>
             <option value="open">المواقع المفتوحة فقط</option>
             <option value="closed">المواقع المغلقة / لم تبدأ</option>
           </select>
 
-          <select className="input" style={{ width: 'auto', padding: '0.4rem 2rem 0.4rem 1rem' }} value={filterData} onChange={e => setFilterData(e.target.value as any)}>
+          <select className="input" style={{ width: 'auto', flexGrow: 1, padding: '0.4rem 2rem 0.4rem 1rem' }} value={filterData} onChange={e => setFilterData(e.target.value as any)}>
             <option value="all">حالة بيان اليوم (الكل)</option>
             <option value="submitted">سجلت بيان اليوم (✔️)</option>
             <option value="unsubmitted">لم تسجل بيان اليوم (⚠️)</option>
           </select>
         </div>
 
-        <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem' }}>
            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
              <CheckCircle2 size={14} color="#2e7d32" /> سجلت اليوم
@@ -126,7 +125,7 @@ export default function AdminMap() {
         </div>
       </div>
 
-      <div className="card" style={{ flex: 1, padding: '0.5rem', overflow: 'hidden' }}>
+      <div className="card" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '0.5rem', overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <Loader2 size={32} className="spin" color="var(--brand)" />
@@ -139,7 +138,7 @@ export default function AdminMap() {
             maxBounds={[[22.0, 24.0], [32.0, 37.0]]} 
             maxBoundsViscosity={1.0}
             minZoom={5}
-            style={{ height: '100%', width: '100%', borderRadius: '0.75rem', zIndex: 1 }}
+            style={{ height: '100%', width: '100%', minHeight: '400px', flex: 1, borderRadius: '0.75rem', zIndex: 1 }}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

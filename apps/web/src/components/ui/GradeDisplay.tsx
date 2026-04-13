@@ -37,7 +37,7 @@ export function GradeStepper({ label, ton, kg, onChangeTon, onChangeKg, disabled
         درجة {label}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
         {/* خانة الطن (Ton input) */}
         <div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 600 }}>طن</div>

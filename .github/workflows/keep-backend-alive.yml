@@ -1,20 +1,41 @@
-name: Keep Backend Alive
+name: Keep Services Alive
 
 on:
   schedule:
-    # Runs every 5 minutes
+    # ── Ping Backend كل 5 دقائق لمنع Sleep على Render ──
     - cron: "*/5 * * * *"
-  workflow_dispatch:
+    # ── Ping Supabase كل يوم الساعة 6 صباحاً لمنع Pause خلال الأسبوع ──
+    - cron: "0 6 * * *"
+  workflow_dispatch:   # تشغيل يدوي عند الحاجة
 
 jobs:
-  ping:
+
+  # ── وظيفة 1: إيقاظ الـ Backend ──────────────────────────────
+  ping-backend:
+    name: Ping Backend (Render)
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Render Backend
-        # We use a 3-count retry mechanism across 5 seconds of delay in case
-        # of transient network issues, targeting the new /health endpoint.
-        # Ensure to set RENDER_API_URL in GitHub Secrets to your Render URL.
+      - name: Ping /health endpoint
         run: |
-          curl --retry 3 --retry-delay 5 \
+          curl --retry 3 --retry-delay 5 --max-time 30 \
           -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
-          ${{ secrets.RENDER_API_URL }}/health
+          -f "${{ secrets.RENDER_API_URL }}/health" \
+          && echo "✅ Backend is awake" \
+          || echo "⚠️ Backend ping failed (may be waking up)"
+
+  # ── وظيفة 2: إيقاظ Supabase (يعمل مرة يومياً فقط) ──────────
+  ping-supabase:
+    name: Ping Supabase (Daily Keep-Alive)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        # يستدعي endpoint بسيط على Supabase لمنعها من الدخول في وضع الإيقاف
+        # SUPABASE_URL  → مثال: https://xxxx.supabase.co
+        # SUPABASE_ANON_KEY → المفتاح العام (anon/public key)
+        run: |
+          curl --retry 3 --retry-delay 5 --max-time 30 \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+          && echo "✅ Supabase is awake" \
+          || echo "⚠️ Supabase ping failed"

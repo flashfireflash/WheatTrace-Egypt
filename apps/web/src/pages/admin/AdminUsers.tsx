@@ -86,7 +86,7 @@ export default function AdminUsers() {
       return api.post('/users', { ...form, governorateId: form.governorateId || null });
     },
     onSuccess: () => {
-      toast.success(editing ? 'تمت مراجعة بيانات الكادر بنجاح' : 'تم اعتماد الكادر الجديد داخل المنظومة');
+      toast.success(editing ? 'تم تعديل بيانات المستخدم بنجاح' : 'تم إنشاء المستخدم بنجاح');
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       closeModal();
     },
@@ -97,11 +97,11 @@ export default function AdminUsers() {
   const { mutate: deleteUser, isPending: deleting } = useMutation({
     mutationFn: (id: string) => api.delete(`/users/${id}`),
     onSuccess: () => {
-      toast.success('تم إنهاء صلاحية المستخدم وحذفه');
+      toast.success('تم حذف المستخدم بنجاح');
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       setDel(null);
     },
-    onError: (e: any) => toast.error(e.response?.data?.message ?? 'حدث خطأ في طي قيد المستخدم'),
+    onError: (e: any) => toast.error(e.response?.data?.message ?? 'حدث خطأ أثناء الحذف'),
   });
 
   // بث الرسائل الميدانية
@@ -155,9 +155,9 @@ export default function AdminUsers() {
 
       {/* الترويسة العليا للمنصة */}
       <div className="section-header">
-        <h2 className="section-title"><Shield size={20} />شؤون الكوادر والموظفين</h2>
+        <h2 className="section-title"><Shield size={20} />إدارة المستخدمين</h2>
         <button className="btn btn-primary btn-sm" onClick={openAdd}>
-          <Plus size={16} /> تكويد موظف جديد
+          <Plus size={16} /> إضافة مستخدم جديد
         </button>
       </div>
 
@@ -200,7 +200,7 @@ export default function AdminUsers() {
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <UserCheck size={40} />
-            <h3>{search ? 'لم يُعثر على مسجل' : 'دفتر الكادر فارغ'}</h3>
+            <h3>{search ? 'لا يوجد مستخدم مطابق للبحث' : 'قائمة المستخدمين فارغة'}</h3>
           </div>
         ) : (
           <table className="table">
@@ -241,14 +241,14 @@ export default function AdminUsers() {
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       {/* المراسلات توجه فقط للمفتش الميداني */}
                       {u.role === 'Inspector' && (
-                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--brand)' }} onClick={() => setMsgUser(u)} title="إيفاد رسالة لمنظومة المفتش">
+                        <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--brand)' }} onClick={() => setMsgUser(u)} title="إرسال رسالة للمفتش">
                           <Mail size={15} />
                         </button>
                       )}
-                      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEdit(u)} title="تحديث هيكلة الموظف">
+                      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEdit(u)} title="تعديل المستخدم">
                         <Edit2 size={15} />
                       </button>
-                      <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--danger)' }} onClick={() => setDel(u)} title="شطب المستخدم">
+                      <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'var(--danger)' }} onClick={() => setDel(u)} title="حذف المستخدم">
                         <Trash2 size={15} />
                       </button>
                     </div>
@@ -267,7 +267,7 @@ export default function AdminUsers() {
           <div className="card bounce-in" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 460, maxHeight: '90dvh', overflowY: 'auto', padding: 'clamp(1.25rem, 4vw, 1.75rem)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                {editing ? `تحجيم وتعديل: ${editing.name}` : 'تأسيس حساب نظامي جديد'}
+                {editing ? `تعديل المستخدم: ${editing.name}` : 'إضافة مستخدم جديد'}
               </h3>
               <button className="btn btn-ghost btn-icon btn-sm" onClick={closeModal}><X size={18} /></button>
             </div>
@@ -311,7 +311,7 @@ export default function AdminUsers() {
 
               <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={saving}>
-                  {saving ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />مداولة السيرفر...</> : <><Save size={16} />تثبيت الهوية</>}
+                  {saving ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />جاري الحفظ...</> : <><Save size={16} />حفظ البيانات</>}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={closeModal}>إغلاق</button>
               </div>
@@ -328,16 +328,16 @@ export default function AdminUsers() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--danger-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
               <Trash2 size={24} color="var(--danger)" />
             </div>
-            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>هل تؤيد قرار العزل النهائي؟</h3>
+            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>تأكيد الحذف</h3>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              سيتم شطب <strong>{deleteConfirm.name}</strong> وإيقاف حسابه. يعتبر هذا الإجراء باتاً لا مرجوع فيه.
+              هل أنت متأكد من حذف المستخدم <strong>{deleteConfirm.name}</strong> نهائياً؟
             </p>
             <div style={{ display: 'flex', gap: '0.65rem' }}>
               <button className="btn btn-danger" style={{ flex: 1 }} disabled={deleting} onClick={() => deleteUser(deleteConfirm.id)}>
                 {deleting ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={16} />}
-                إقرار الفصل
+                حذف
               </button>
-              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setDel(null)}>طوي الورقة</button>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setDel(null)}>إلغاء</button>
             </div>
           </div>
         </div>
@@ -349,7 +349,7 @@ export default function AdminUsers() {
           <div onClick={() => setMsgUser(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} />
           <div className="card bounce-in" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 460, padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>خط السلطة إلى المفتش {msgUser.name}</h3>
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>إرسال رسالة إلى المفتش {msgUser.name}</h3>
               <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setMsgUser(null)}><X size={18} /></button>
             </div>
             <form onSubmit={e => { e.preventDefault(); sendMsg(); }}>
@@ -359,13 +359,13 @@ export default function AdminUsers() {
                 required 
                 value={msgText} 
                 onChange={e => setMsgText(e.target.value)} 
-                placeholder="سطّر تعليماتك السيادية هنا ليتم بثها فورا لشاشة جهاز المندوب..."
+                placeholder="اكتب رسالتك وتوجيهاتك للمفتش هنا..."
               />
               <div style={{ display: 'flex', gap: '0.65rem', marginTop: '1rem' }}>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={sending}>
-                  {sending ? <Loader2 size={16} className="spin" /> : <Send size={16} />} نقل البرقية
+                  {sending ? <Loader2 size={16} className="spin" /> : <Send size={16} />} إرسال
                 </button>
-                <button type="button" className="btn btn-ghost" onClick={() => setMsgUser(null)}>سحب الخطاب</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setMsgUser(null)}>إلغاء</button>
               </div>
             </form>
           </div>

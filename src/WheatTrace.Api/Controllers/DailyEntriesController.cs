@@ -167,7 +167,9 @@ public class DailyEntriesController : ControllerBase
             return BadRequest(new { message = "لا يمكن التعديل في يوم العطلة" });
 
         var newTotalKg = CalcTotalKg(request.Wheat22_5, request.Wheat23, request.Wheat23_5);
-        var oldTotalKg = entry.TotalQtyKg;
+        var oldTotalKg = (long)entry.Wheat22_5Ton * 1000 + entry.Wheat22_5Kg
+                       + (long)entry.Wheat23Ton * 1000 + entry.Wheat23Kg
+                       + (long)entry.Wheat23_5Ton * 1000 + entry.Wheat23_5Kg;
         var delta = newTotalKg - oldTotalKg;
 
         await using var tx = await _db.Database.BeginTransactionAsync();
@@ -255,28 +257,30 @@ public class DailyEntriesController : ControllerBase
             entry.Site?.GovernorateId != _currentUser.GovernorateId)
             return Forbid();
 
-        var oldTotalKg  = entry.TotalQtyKg;
-        var newWheat22_5Kg = request.NewWheat22_5 is null
+        // حساب الـ delta من القيم الخام (تجنب الـ computed column الممكن قيمته 0 عند القراءة)
+        var oldKg = (long)entry.Wheat22_5Ton * 1000 + entry.Wheat22_5Kg
+                  + (long)entry.Wheat23Ton   * 1000 + entry.Wheat23Kg
+                  + (long)entry.Wheat23_5Ton * 1000 + entry.Wheat23_5Kg;
+
+        var new22_5  = request.NewWheat22_5 is null
             ? (long)entry.Wheat22_5Ton * 1000 + entry.Wheat22_5Kg
             : (long)request.NewWheat22_5.Ton * 1000 + request.NewWheat22_5.Kg;
-        var newWheat23Kg   = request.NewWheat23   is null
-            ? (long)entry.Wheat23Ton   * 1000 + entry.Wheat23Kg
-            : (long)request.NewWheat23.Ton   * 1000 + request.NewWheat23.Kg;
-        var newWheat23_5Kg = request.NewWheat23_5 is null
+        var new23    = request.NewWheat23 is null
+            ? (long)entry.Wheat23Ton * 1000 + entry.Wheat23Kg
+            : (long)request.NewWheat23.Ton * 1000 + request.NewWheat23.Kg;
+        var new23_5  = request.NewWheat23_5 is null
             ? (long)entry.Wheat23_5Ton * 1000 + entry.Wheat23_5Kg
             : (long)request.NewWheat23_5.Ton * 1000 + request.NewWheat23_5.Kg;
-        var newTotalKg = newWheat22_5Kg + newWheat23Kg + newWheat23_5Kg;
-        var delta      = newTotalKg - oldTotalKg;
+        var delta = (new22_5 + new23 + new23_5) - oldKg;
 
-        await using var tx = await _db.Database.BeginTransactionAsync();
-        var site = await _db.StorageSites
-            .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", entry.SiteId)
-            .FirstAsync();
+        // تحديث رصيد الموقع بشكل مباشر عبر EF
+        var site = await _db.StorageSites.FindAsync(entry.SiteId);
+        if (site is null) return NotFound(new { message = "الموقع التخزيني غير موجود" });
 
         try { site.ApplyTransaction(delta, true); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
 
-        // تطبيق القيم الجديدة
+        // تطبيق القيم الجديدة على السجل
         if (request.NewWheat22_5 is not null) { entry.Wheat22_5Ton = request.NewWheat22_5.Ton; entry.Wheat22_5Kg = request.NewWheat22_5.Kg; }
         if (request.NewWheat23   is not null) { entry.Wheat23Ton   = request.NewWheat23.Ton;   entry.Wheat23Kg   = request.NewWheat23.Kg;   }
         if (request.NewWheat23_5 is not null) { entry.Wheat23_5Ton = request.NewWheat23_5.Ton; entry.Wheat23_5Kg = request.NewWheat23_5.Kg; }
@@ -287,7 +291,6 @@ public class DailyEntriesController : ControllerBase
         entry.UpdatedAt         = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
-        await tx.CommitAsync();
         await _audit.LogAsync("ManagerDirectEdit", "DailyEntry", id);
 
         // 🔔 إشعار للمراقبين فقط (بدون انتظار موافقة)

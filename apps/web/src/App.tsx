@@ -6,6 +6,7 @@ import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
 import LoginPage from './pages/LoginPage';
 import SplashScreen from './pages/SplashScreen';
+import ServerWakeUp from './components/ui/ServerWakeUp';
 
 const InspectorLayout = lazy(() => import('./components/layout/InspectorLayout'));
 const ManagerLayout = lazy(() => import('./components/layout/ManagerLayout'));
@@ -91,37 +92,39 @@ function GhostSwitcher() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <Toaster
-            position="bottom-center"
-            toastOptions={{
-              style: {
-                fontFamily: 'Cairo, sans-serif',
-                direction: 'rtl',
-                borderRadius: '0.875rem',
-                fontWeight: 600,
-                background: 'var(--surface-1)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                boxShadow: 'var(--shadow-lg)',
-              },
-              success: {
-                iconTheme: { primary: '#15803d', secondary: '#dcfce7' },
-              },
-              error: {
-                iconTheme: { primary: '#dc2626', secondary: '#fee2e2' },
-              },
-            }}
-          />
-          <GhostSwitcher />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/splash" element={<SplashScreen />} />
-            <Route path="/*"    element={<RoleRouter />} />
-          </Routes>
-        </BrowserRouter>
-      </ThemeProvider>
+      <ServerWakeUp>
+        <ThemeProvider>
+          <BrowserRouter>
+            <Toaster
+              position="bottom-center"
+              toastOptions={{
+                style: {
+                  fontFamily: 'Cairo, sans-serif',
+                  direction: 'rtl',
+                  borderRadius: '0.875rem',
+                  fontWeight: 600,
+                  background: 'var(--surface-1)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                  boxShadow: 'var(--shadow-lg)',
+                },
+                success: {
+                  iconTheme: { primary: '#15803d', secondary: '#dcfce7' },
+                },
+                error: {
+                  iconTheme: { primary: '#dc2626', secondary: '#fee2e2' },
+                },
+              }}
+            />
+            <GhostSwitcher />
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/splash" element={<SplashScreen />} />
+              <Route path="/*"    element={<RoleRouter />} />
+            </Routes>
+          </BrowserRouter>
+        </ThemeProvider>
+      </ServerWakeUp>
     </QueryClientProvider>
   );
 }

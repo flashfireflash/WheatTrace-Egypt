@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { login } from '../api/client';
-import { Wheat, User, Lock, Loader2 } from 'lucide-react';
+import { User, Lock, Loader2 } from 'lucide-react';
 import { useLocaleStore } from '../store/localeStore';
 
 /**
@@ -17,12 +17,20 @@ import { useLocaleStore } from '../store/localeStore';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isWakingUp, setIsWakingUp] = useState(false);
   const navigate = useNavigate();
   const setAuthUser = useAuthStore((s) => s.login);
   const lang = useLocaleStore((s) => s.lang);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => login(username, password),
+    mutationFn: () => {
+      // إذا استغرق الطلب أكثر من 4 ثوانٍ، نعرض مؤشر استيقاظ الخادم
+      const wakeTimer = setTimeout(() => setIsWakingUp(true), 4000);
+      return login(username, password).finally(() => {
+        clearTimeout(wakeTimer);
+        setIsWakingUp(false);
+      });
+    },
     onSuccess: (res) => {
       // تفويض الدخول وتهيئة بيئة المتسخدم في التخزين المحلي
       setAuthUser(res);
@@ -84,9 +92,31 @@ export default function LoginPage() {
           <img src="/nfsa-logo.png" alt="NFSA Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<span style="font-size:2.5rem;color:#15803d">🛡️</span>'; }} />
         </div>
         
-        <h1 style={{ fontSize: '1.6rem', fontFamily: 'Cairo, sans-serif', fontWeight: 900, color: '#166534', marginBottom: '2.5rem', letterSpacing: '-0.5px' }}>
+        <h1 style={{ fontSize: '1.6rem', fontFamily: 'Cairo, sans-serif', fontWeight: 900, color: '#166534', marginBottom: isWakingUp ? '1rem' : '2.5rem', letterSpacing: '-0.5px' }}>
           منظومة استلام الأقماح المحلية
         </h1>
+
+        {/* مؤشر استيقاظ الخادم */}
+        {isWakingUp && (
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
+            border: '1px solid #fbbf24',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            textAlign: 'right',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}>
+            <Loader2 size={18} style={{ color: '#d97706', animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#92400e' }}>الخادم يستيقظ من وضع السكون...</div>
+              <div style={{ fontSize: '0.72rem', color: '#b45309', marginTop: '2px' }}>يرجى الانتظار لحظات (قد يستغرق 30-60 ثانية)</div>
+            </div>
+          </div>
+        )}
 
         {/* نموذج الدخول */}
         <form onSubmit={(e) => { e.preventDefault(); mutate(); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'right' }}>

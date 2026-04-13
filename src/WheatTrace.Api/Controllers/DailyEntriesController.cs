@@ -239,52 +239,69 @@ public class DailyEntriesController : ControllerBase
     }
 
     /// <summary>
-    /// GovernorateManager: يرفع طلب تعديل كمية — يُوجَّه للموافقة من مراقب العمليات.
+    /// GovernorateManager: تعديل مباشر للكميات — يُطبَّق فوراً ويُرسَل إشعار للمراقبين.
     /// </summary>
-    [HttpPost("{id:guid}/manager-edit-request")]
+    [HttpPost("{id:guid}/manager-direct-edit")]
     [Authorize(Policy = "ManagerOrAbove")]
-    public async Task<ActionResult> ManagerRequestEdit(Guid id, [FromBody] ManagerEditRequestBody request)
+    public async Task<ActionResult> ManagerDirectEdit(Guid id, [FromBody] ManagerEditRequestBody request)
     {
-        var entry = await _db.DailyEntries.Include(e => e.Site).FirstOrDefaultAsync(e => e.Id == id);
+        var entry = await _db.DailyEntries
+            .Include(e => e.Site)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (entry is null) return NotFound();
 
-        // المدير يقدر يطلب تعديل لمواقع محافظته فقط
+        // المدير يقدر فقط يعدّل مواقع محافظته
         if (_currentUser.Role == "GovernorateManager" &&
             entry.Site?.GovernorateId != _currentUser.GovernorateId)
             return Forbid();
 
-        // لا يُسمح بطلب تعديل معلق على نفس السجل بالفعل
-        var hasPending = await _db.EditRequests.AnyAsync(r =>
-            r.EntryId == id &&
-            r.Status == RequestStatus.Pending);
-        if (hasPending)
-            return BadRequest(new { message = "يوجد طلب تعديل معلق بالفعل لهذا السجل" });
+        var oldTotalKg  = entry.TotalQtyKg;
+        var newWheat22_5Kg = request.NewWheat22_5 is null
+            ? (long)entry.Wheat22_5Ton * 1000 + entry.Wheat22_5Kg
+            : (long)request.NewWheat22_5.Ton * 1000 + request.NewWheat22_5.Kg;
+        var newWheat23Kg   = request.NewWheat23   is null
+            ? (long)entry.Wheat23Ton   * 1000 + entry.Wheat23Kg
+            : (long)request.NewWheat23.Ton   * 1000 + request.NewWheat23.Kg;
+        var newWheat23_5Kg = request.NewWheat23_5 is null
+            ? (long)entry.Wheat23_5Ton * 1000 + entry.Wheat23_5Kg
+            : (long)request.NewWheat23_5.Ton * 1000 + request.NewWheat23_5.Kg;
+        var newTotalKg = newWheat22_5Kg + newWheat23Kg + newWheat23_5Kg;
+        var delta      = newTotalKg - oldTotalKg;
 
-        var editReq = new EditRequest
-        {
-            Id              = Guid.NewGuid(),
-            EntryId         = id,
-            RequestedById   = _currentUser.UserId,
-            RequestedByRole = _currentUser.Role,
-            EditReason      = request.Reason,
-            NewWheat22_5    = request.NewWheat22_5 is null ? null : (decimal?)(request.NewWheat22_5.Ton * 1000 + request.NewWheat22_5.Kg),
-            NewWheat23      = request.NewWheat23   is null ? null : (decimal?)(request.NewWheat23.Ton   * 1000 + request.NewWheat23.Kg),
-            NewWheat23_5    = request.NewWheat23_5 is null ? null : (decimal?)(request.NewWheat23_5.Ton * 1000 + request.NewWheat23_5.Kg),
-        };
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        var site = await _db.StorageSites
+            .FromSqlRaw("SELECT * FROM storage_sites WHERE id = {0} FOR UPDATE", entry.SiteId)
+            .FirstAsync();
 
-        _db.EditRequests.Add(editReq);
+        try { site.ApplyTransaction(delta, true); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+
+        // تطبيق القيم الجديدة
+        if (request.NewWheat22_5 is not null) { entry.Wheat22_5Ton = request.NewWheat22_5.Ton; entry.Wheat22_5Kg = request.NewWheat22_5.Kg; }
+        if (request.NewWheat23   is not null) { entry.Wheat23Ton   = request.NewWheat23.Ton;   entry.Wheat23Kg   = request.NewWheat23.Kg;   }
+        if (request.NewWheat23_5 is not null) { entry.Wheat23_5Ton = request.NewWheat23_5.Ton; entry.Wheat23_5Kg = request.NewWheat23_5.Kg; }
+
+        entry.IsEditedByManager = true;
+        entry.ManagerEditNote   = request.Reason;
+        entry.EditApprovedAt    = DateTime.UtcNow;
+        entry.UpdatedAt         = DateTime.UtcNow;
+
         await _db.SaveChangesAsync();
-        await _audit.LogAsync("ManagerEditRequest", "EditRequest", editReq.Id);
+        await tx.CommitAsync();
+        await _audit.LogAsync("ManagerDirectEdit", "DailyEntry", id);
 
-        // 🔔 إشعار عبر SignalR لكل مراقبي العمليات
-        await _hubContext.Clients.Group("Monitor-All").SendAsync("ManagerEditRequestPending", new
+        // 🔔 إشعار للمراقبين فقط (بدون انتظار موافقة)
+        await _hubContext.Clients.Group("Monitor-All").SendAsync("DailyEntryUpdated", new
         {
-            siteName      = entry.Site?.Name,
-            entryDate     = entry.Date,
-            requestedBy   = _currentUser.UserId
+            type        = "ManagerDirectEdit",
+            siteName    = entry.Site?.Name,
+            entryDate   = entry.Date,
+            editedBy    = _currentUser.UserId,
+            reason      = request.Reason
         });
+        await EmitLiveUpdate(entry.Site?.GovernorateId);
 
-        return Ok(new { message = "تم إرسال طلب التعديل لمراقب العمليات للموافقة" });
+        return Ok(new { message = "تم تطبيق التعديل وإخطار المراقبين" });
     }
 
     /// <summary>Manager: list pending edit requests for their scope.</summary>
@@ -353,18 +370,24 @@ public class DailyEntriesController : ControllerBase
             return BadRequest(new { message = "تم معالجة هذا الطلب مسبقاً" });
 
         // التحقق من صلاحية الموافقة:
-        // - طلب المفتش: يوافق مدير المحافظة أو أعلى
-        // - طلب المدير: يوافق مراقب العمليات أو أعلى
-        if (req.RequestedByRole == "GovernorateManager")
+        // طلب المفتش → يوافق مدير المحافظة المسؤول عن نفس المحافظة
+        var isInspectorRequest = req.RequestedByRole != "GovernorateManager";
+        if (isInspectorRequest)
         {
-            var canApprove = _currentUser.Role is "Monitor" or "GeneralMonitor" or "Admin";
+            // المدير يقدر يوافق على طلبات مفتشي محافظته فقط
+            if (_currentUser.Role == "GovernorateManager" &&
+                _currentUser.GovernorateId != req.Entry!.Site!.GovernorateId)
+                return Forbid();
+
+            // المستويات الأعلى (المراقبون والأدمن) يقدروا يوافقوا على أي طلب
+            var canApprove = _currentUser.Role is "GovernorateManager" or "OperationsMonitor" or "GeneralMonitor" or "Admin" or "SuperAdmin";
             if (!canApprove) return Forbid();
         }
         else
         {
-            if (!WheatTrace.Application.Common.Security.RbacHelper.CanAccessSite(
-                _currentUser.Role, _currentUser.GovernorateId, req.Entry!.Site!.GovernorateId))
-                return Forbid();
+            // طلبات المدير القديمة (Pending) — يوافق عليها المراقبون فقط
+            var canApprove = _currentUser.Role is "OperationsMonitor" or "GeneralMonitor" or "Admin" or "SuperAdmin";
+            if (!canApprove) return Forbid();
         }
 
         var entry = req.Entry!;
@@ -436,17 +459,20 @@ public class DailyEntriesController : ControllerBase
         if (req.Status != RequestStatus.Pending)
             return BadRequest(new { message = "تم معالجة هذا الطلب مسبقاً" });
 
-        // نفس منطق الموافقة — طلب المدير ← مراقب العمليات، طلب المفتش ← المدير
-        if (req.RequestedByRole == "GovernorateManager")
+        // طلب المفتش → المدير يرفض | طلبات المدير القديمة → المراقب يرفض
+        var isInspectorReq = req.RequestedByRole != "GovernorateManager";
+        if (isInspectorReq)
         {
-            var canReject = _currentUser.Role is "Monitor" or "GeneralMonitor" or "Admin";
+            if (_currentUser.Role == "GovernorateManager" &&
+                _currentUser.GovernorateId != req.Entry!.Site!.GovernorateId)
+                return Forbid();
+            var canReject = _currentUser.Role is "GovernorateManager" or "OperationsMonitor" or "GeneralMonitor" or "Admin" or "SuperAdmin";
             if (!canReject) return Forbid();
         }
         else
         {
-            if (!WheatTrace.Application.Common.Security.RbacHelper.CanAccessSite(
-                _currentUser.Role, _currentUser.GovernorateId, req.Entry!.Site!.GovernorateId))
-                return Forbid();
+            var canReject = _currentUser.Role is "OperationsMonitor" or "GeneralMonitor" or "Admin" or "SuperAdmin";
+            if (!canReject) return Forbid();
         }
 
         req.Status          = RequestStatus.Rejected;

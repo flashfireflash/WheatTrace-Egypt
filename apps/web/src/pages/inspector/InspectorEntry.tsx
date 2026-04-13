@@ -182,7 +182,7 @@ export default function InspectorEntry() {
       return requestEdit(existingEntry.id, body);
     },
     onSuccess: () => {
-      toast.success('تم رفع طلب إعادة فتح التعديل للإدارة للبت فيه ⏳');
+      toast.success('تم إرسال طلب التعديل إلى مسؤول المحافظة للموافقة ⏳');
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || err.message || 'حدث خطأ غير متوقع');
@@ -387,10 +387,10 @@ export default function InspectorEntry() {
       {hasPendingEdit && (
         <div style={{ background: '#fff3e0', border: '1px solid #ffd54f', color: '#e65100', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
           <h3 style={{ fontSize: '1rem', margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
-            <RefreshCw size={18} className="spin" /> الطلب الإداري بانتظار التأشيرة
+            <RefreshCw size={18} className="spin" /> طلب التعديل بانتظار موافقة المدير
           </h3>
           <p style={{ fontSize: '0.85rem', margin: 0 }}>
-            تم رفع ملتمس التعديل وهو حالياً تحت مجهر المديرية للقرار. الخانات ستظل مُجمّدة حتى الرد.
+            تم إرسال طلب التعديل إلى مسؤول المحافظة. الخانات ستظل مُجمّدة حتى يتم الرد.
           </p>
         </div>
       )}

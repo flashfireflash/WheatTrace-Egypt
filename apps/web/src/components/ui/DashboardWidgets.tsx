@@ -224,6 +224,7 @@ export function FullStatsWidget({ isNational }: { isNational: boolean }) {
     queryKey: ['detailed-totals-widget'],
     queryFn: () => api.get('/reports/detailed-totals').then(r => r.data),
     staleTime: 60_000,
+    refetchInterval: 60_000,   // تحديث تلقائي كل دقيقة لضمان رؤية الأرقام الجديدة فور إدخالها
   });
 
   if (isLoading) return (

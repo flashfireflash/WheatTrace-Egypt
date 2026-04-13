@@ -73,6 +73,7 @@ export default function AdminDashboard() {
       };
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,   // تجديد البيانات تلقائياً كل 60 ثانية
   });
 
   const now = new Date();

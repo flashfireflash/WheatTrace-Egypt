@@ -107,10 +107,19 @@ var app = builder.Build();
 // ---- Seed development-only data ------------------------------
 if (app.Environment.IsDevelopment())
 {
+    // HOTFIX: Some local DBs have invalid Status 'Opened' from older versions, crashing EF mapping
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<WheatTrace.Infrastructure.Data.WheatTraceDbContext>();
+        try { await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(db.Database, "UPDATE \"StorageSites\" SET \"Status\" = 'Active' WHERE \"Status\" = 'Opened'"); } catch { }
+        try { await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(db.Database, "UPDATE storage_sites SET status = 'Active' WHERE status = 'Opened'"); } catch { }
+    }
+
     await SeedAdmin.EnsureAdminExists(app.Services);
     await WheatTrace.Api.SeedGovernorates.EnsureGovernoratesExist(app.Services);
     await WheatTrace.Api.SeedRealData.SeedAsync(app.Services);
     await WheatTrace.Api.SeedTestUsers.SeedAsync(app.Services);
+    await WheatTrace.Api.SeedApril12.SeedAsync(app.Services);
 }
 
 // ---- One-time production seed (triggered by env var) ---------

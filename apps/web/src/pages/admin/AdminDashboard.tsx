@@ -392,20 +392,17 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
   let w23Ton = 0, w23Kg = 0;
   let w23_5Ton = 0, w23_5Kg = 0;
 
-  let totalReceivedAll = 0;
-
   data.forEach((gov: any) => {
     gov.authorities?.forEach((auth: any) => {
       auth.sites?.forEach((s: any) => {
         w22_5Kg += (s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0);
         w23Kg   += (s.w23Ton   || 0) * 1000 + (s.w23Kg   || 0);
         w23_5Kg += (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0);
-        totalReceivedAll += s.totalReceivedKg ?? s.TotalReceivedKg ?? 0;
       });
     });
   });
 
-  gKg = totalReceivedAll > 0 ? totalReceivedAll : (w22_5Kg + w23Kg + w23_5Kg);
+  gKg = w22_5Kg + w23Kg + w23_5Kg;
   gTon    = Math.floor(gKg / 1000);    gKg    = gKg    % 1000;
   w22_5Ton = Math.floor(w22_5Kg / 1000); w22_5Kg = w22_5Kg % 1000;
   w23Ton   = Math.floor(w23Kg / 1000);   w23Kg   = w23Kg   % 1000;

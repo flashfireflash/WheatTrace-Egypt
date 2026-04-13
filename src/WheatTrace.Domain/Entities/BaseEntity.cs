@@ -13,6 +13,8 @@ public abstract class BaseEntity
     // تاريخ الإنشاء - يُسجَّل بالتوقيت العالمي UTC لتجنب إشكاليات تغيير التوقيت
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // تاريخ آخر تعديل - يظل فارغاً حتى أول تعديل
+    // تاريخ آخر تعديل - يظل فارغاً حتى أول تعديل.
+    // يتم استخدامه للتحقق من التزامن (Optimistic Concurrency Control) لمنع تضارب التعديلات
+    [System.ComponentModel.DataAnnotations.ConcurrencyCheck]
     public DateTime? UpdatedAt { get; set; }
 }

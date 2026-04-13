@@ -51,11 +51,26 @@ export default function AdminAuditLogs() {
       <div className="section-header">
         <h2 className="section-title"><ScrollText size={20} />سجل الحركات والأحداث (Audit Log)</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className="btn btn-outline btn-sm"
+            style={{ fontSize: '0.8rem' }}
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url;
+              a.download = `audit_backup_${new Date().toISOString().split('T')[0]}.json`;
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+          >
+            تصدير كـ JSON 
+          </button>
+          
           <button 
             className="btn btn-ghost btn-sm" 
             style={{ color: 'var(--danger)', fontSize: '0.8rem', borderColor: 'var(--danger-bg)' }}
             onClick={() => {
-              if (confirm('هل أنت متأكد من مسح جميع السجلات الأقدم من 30 يوماً؟ سيساعد هذا في التخفيف من مساحة قاعدة البيانات.')) {
+              if (confirm('هل قمت بأخذ نسخة احتياطية (تصدير)؟ وهل أنت متأكد من مسح السجلات الأقدم من 30 يوماً؟')) {
                 clearLogs(30);
               }
             }}

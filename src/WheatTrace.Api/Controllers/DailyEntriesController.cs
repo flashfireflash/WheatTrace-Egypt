@@ -290,7 +290,14 @@ public class DailyEntriesController : ControllerBase
         entry.EditApprovedAt    = DateTime.UtcNow;
         entry.UpdatedAt         = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return BadRequest(new { message = "تم تعديل البيانات بواسطة مستخدم آخر، برجاء التحديث والمحاولة مرة أخرى." });
+        }
         await _audit.LogAsync("ManagerDirectEdit", "DailyEntry", id);
 
         // 🔔 إشعار للمراقبين فقط (بدون انتظار موافقة)
@@ -659,7 +666,16 @@ public class DailyEntriesController : ControllerBase
                 existing.Wheat23Ton   = item.Wheat23.Ton;   existing.Wheat23Kg   = item.Wheat23.Kg;
                 existing.Wheat23_5Ton = item.Wheat23_5.Ton; existing.Wheat23_5Kg = item.Wheat23_5.Kg;
                 existing.Notes = item.Notes; existing.UpdatedAt = DateTime.UtcNow;
-                await _db.SaveChangesAsync();
+                try
+                {
+                    await _db.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    await tx.RollbackAsync();
+                    results.Add(new SyncBatchResult(false, existing.Id, "تعارض في البيانات - تم تعديل التسجيل مؤخراً بواسطة مستخدم آخر"));
+                    continue;
+                }
                 await tx.CommitAsync();
                 results.Add(new SyncBatchResult(true, existing.Id, null));
             }

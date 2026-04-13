@@ -24,8 +24,9 @@ export interface QueueItem {
   wheat23:   { ton: number; kg: number }; // كمية درجة 23
   wheat23_5: { ton: number; kg: number }; // كمية درجة 23.5
   notes?: string;            // ملاحظات اختيارية
-  status: 'pending' | 'syncing' | 'synced' | 'conflict'; // حالة المزامنة
+  status: 'pending' | 'syncing' | 'synced' | 'conflict' | 'failed'; // حالة المزامنة
   conflictReason?: string;   // سبب التعارض إذا وُجد
+  retryCount?: number;       // عدد المحاولات الفاشلة
 }
 
 // جلب كامل الطابور من التخزين المحلي مع معالجة الأخطاء
@@ -47,11 +48,11 @@ function saveQueue(items: QueueItem[]) {
  * إضافة سجل جديد للطابور.
  * إذا كان هناك سجل للتاريخ نفسه، يُستبدَل بالسجل الأحدث (آخر تحديث يفوز).
  */
-export function enqueue(item: Omit<QueueItem, 'status'>) {
+export function enqueue(item: Omit<QueueItem, 'status' | 'retryCount'>) {
   const queue = getQueue();
   // حذف السجل القديم للتاريخ نفسه (إن وُجد) قبل إضافة الجديد
   const filtered = queue.filter(q => q.date !== item.date || q.existingEntryId !== item.existingEntryId);
-  saveQueue([...filtered, { ...item, status: 'pending' }]);
+  saveQueue([...filtered, { ...item, status: 'pending', retryCount: 0 }]);
 }
 
 /**
@@ -102,8 +103,20 @@ export function useOfflineQueue() {
       if (synced.length)    toast.success(`تم مزامنة ${synced.length} سجل بنجاح`);
       if (conflicts.length) toast.error(`${conflicts.length} سجل به تعارض — يرجى المراجعة`);
     } catch {
-      // فشل الشبكة: إعادة السجلات لحالة 'pending' للمحاولة لاحقاً
-      saveQueue(getQueue().map(q => q.status === 'syncing' ? { ...q, status: 'pending' } : q));
+      // فشل الشبكة: إعادة السجلات لحالة 'pending' أو 'failed' بناءً على عدد المحاولات
+      const current = getQueue();
+      const updated = current.map(q => {
+        if (q.status === 'syncing') {
+          const retries = (q.retryCount || 0) + 1;
+          if (retries >= 3) {
+            toast.error('فشلت المزامنة المتكررة لبعض السجلات. يرجى التحقق من اتصالك وإعادة المحاولة يدوياً.', { duration: 5000 });
+            return { ...q, status: 'failed', retryCount: retries };
+          }
+          return { ...q, status: 'pending', retryCount: retries };
+        }
+        return q;
+      });
+      saveQueue(updated);
     }
   }, []);
 

@@ -108,6 +108,60 @@ public class ReportsController : ControllerBase
         return Ok(new { fixedCount, deletedDuplicates, message = "Databases synchronized" });
     }
 
+    [AllowAnonymous]
+    [HttpGet("fix-kharga-db")]
+    public async Task<ActionResult> FixKhargaDb()
+    {
+        var sites = await _db.StorageSites.Include(s => s.DailyEntries).ToListAsync();
+        int fixedCount = 0;
+        int deletedDuplicates = 0;
+
+        foreach(var s in sites)
+        {
+            if (s.Name == "مركز تجميع صومعة الخارجة" && s.DailyEntries.Any())
+            {
+                var toDelete = s.DailyEntries.ToList();
+                _db.DailyEntries.RemoveRange(toDelete);
+                s.TotalReceivedKg = 0;
+                s.CurrentStockKg = 0;
+                deletedDuplicates += toDelete.Count;
+                fixedCount++;
+                continue;
+            }
+            long trueSum = s.DailyEntries.Sum(e => 
+                (long)e.Wheat22_5Ton * 1000 + e.Wheat22_5Kg + 
+                (long)e.Wheat23Ton * 1000 + e.Wheat23Kg + 
+                (long)e.Wheat23_5Ton * 1000 + e.Wheat23_5Kg);
+
+            if (s.TotalReceivedKg != trueSum || s.CurrentStockKg != trueSum)
+            {
+                s.TotalReceivedKg = trueSum;
+                s.CurrentStockKg = trueSum;
+                fixedCount++;
+            }
+        }
+        await _db.SaveChangesAsync();
+        return Ok(new { fixedCount, deletedDuplicates, message = "Prod DB fully synchronized" });
+    }
+
+    [AllowAnonymous]
+    [HttpGet("debug-wadi")]
+    public async Task<ActionResult> DebugWadi()
+    {
+        var dbSites = await _db.StorageSites.Include(s => s.Governorate)
+            .Where(s => s.Governorate.Name == "الوادي الجديد" || s.Governorate.Name.Contains("الواد"))
+            .Select(s => new {
+                s.Id, s.Name, s.TotalReceivedKg,
+                EntriesSum = s.DailyEntries.Sum(e => 
+                    (long)e.Wheat22_5Ton * 1000 + e.Wheat22_5Kg + 
+                    (long)e.Wheat23Ton * 1000 + e.Wheat23Kg + 
+                    (long)e.Wheat23_5Ton * 1000 + e.Wheat23_5Kg)
+            })
+            .ToListAsync();
+            
+        return Ok(dbSites);
+    }
+
     /// <summary>
     /// تقرير التوريد اليومي التفصيلي خلال فترة زمنية: يُعيد صفاً لكل يوم مع كميات كل موقع والمرفوضات.
     /// RBAC: المفتش <- ادخالاته | مدير/مراقب المحافظة <- محافظتهم | النظام <- الكل.

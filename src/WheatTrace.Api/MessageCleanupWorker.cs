@@ -45,10 +45,23 @@ public class MessageCleanupWorker : BackgroundService
                     await dbContext.SaveChangesAsync(stoppingToken);
                     _logger.LogInformation($"Successfully purged {oldMessages.Count} old message(s) exceeding 15 days retention policy.");
                 }
+
+                // تنظيف سجل التدقيق للأقدم من 30 يوماً
+                var auditCutoff = DateTime.UtcNow.AddDays(-30);
+                var oldAuditLogs = await dbContext.AuditLogs
+                    .Where(a => a.CreatedAt < auditCutoff)
+                    .ToListAsync(stoppingToken);
+
+                if (oldAuditLogs.Any())
+                {
+                    dbContext.AuditLogs.RemoveRange(oldAuditLogs);
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                    _logger.LogInformation($"[Scheduled Cleanup Job] Successfully purged {oldAuditLogs.Count} old audit log(s) exceeding 30 days retention policy.");
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while purging old messages.");
+                _logger.LogError(ex, "Error occurred while purging old messages or audit logs.");
             }
 
             // تنام الخدمة لمدة 12 ساعة قبل دورة الفحص التالية (عشان ميستهلكش الموارد)

@@ -7,6 +7,7 @@ import { useThemeStore } from './store/themeStore';
 import LoginPage from './pages/LoginPage';
 import SplashScreen from './pages/SplashScreen';
 import ServerWakeUp from './components/ui/ServerWakeUp';
+import OfflineSyncWidget from './components/ui/OfflineSyncWidget';
 
 const InspectorLayout = lazy(() => import('./components/layout/InspectorLayout'));
 const ManagerLayout = lazy(() => import('./components/layout/ManagerLayout'));
@@ -117,6 +118,7 @@ export default function App() {
               }}
             />
             <GhostSwitcher />
+            <OfflineSyncWidget />
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/splash" element={<SplashScreen />} />

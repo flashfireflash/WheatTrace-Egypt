@@ -146,7 +146,15 @@ export default function InspectorEntry() {
       toast.success('تم حفظ الكميات بنجاح ✅');
       qc.invalidateQueries({ queryKey: ['my-entry', selectedDate] });
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: any) => {
+      // إذا كان الخطأ بسبب انقطاع الشبكة فجأة أثناء الإرسال، نحوله لوضع التخزين المحلي
+      if (!err.response && (err.message === 'Network Error' || err.message.includes('fetch'))) {
+        toast.error('انقطع الاتصال فجأة، سيتم حفظ طلبك للانتظار لحين عودة الإنترنت', { duration: 4000 });
+        saveOffline();
+      } else {
+        toast.error(err.response?.data?.message || err.message || 'حدث خطأ في الحفظ');
+      }
+    },
   });
 
   // ── 6. نظام الطوارئ للتخزين الذاتي محلياً (Offline Fallback Handler) ────────

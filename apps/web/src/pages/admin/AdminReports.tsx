@@ -69,15 +69,23 @@ export default function AdminReports() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2rem' }} className="reports-page">
 
       {/* رأس الطباعة الرسمي */}
-      <div className="print-only" style={{ textAlign: 'center', padding: '1rem 0', display: 'none' }}>
-        <div style={{ fontSize: '0.9rem', color: '#555' }}>الهيئة القومية لسلامة الغذاء — منظومة استلام القمح المحلي 2026</div>
-        <div style={{ fontSize: '1.4rem', fontWeight: 900, marginTop: '0.2rem' }}>بيان إجمالي كميات القمح المستلمة</div>
-        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.2rem' }}>
-          تاريخ الإصدار: {new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' })}
-          <br />
-          الفترة: من {startDate} إلى {endDate}
+      <div className="print-only" style={{ textAlign: 'center', padding: '1rem 0', display: 'none', position: 'relative' }}>
+        <img src="/nfsa-logo.png" alt="NFSA" style={{ position: 'absolute', top: 10, right: 10, width: 80, height: 80, objectFit: 'contain' }} />
+        <div style={{ fontSize: '0.9rem', color: '#555', fontWeight: 800 }}>الهيئة القومية لسلامة الغذاء</div>
+        <div style={{ fontSize: '0.85rem', color: '#666' }}>منظومة استلام القمح المحلي الإستراتيجية</div>
+        <div style={{ fontSize: '1.4rem', fontWeight: 900, marginTop: '0.5rem', textDecoration: 'underline' }}>تقرير بيان إجمالي كميات القمح المستلمة</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', fontSize: '0.85rem', color: '#333' }}>
+          <div style={{ textAlign: 'right' }}>
+            <div><b>تصنيف التقرير:</b> {authorityId ? 'مخصص بالجهة' : 'قومي مجمع'}</div>
+            <div><b>الفترة الزمنية:</b> {startDate} م إلى {endDate} م</div>
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div><b>تاريخ الإصدار:</b> {new Date().toLocaleDateString('ar-EG-u-nu-latn')} - {new Date().toLocaleTimeString('ar-EG-u-nu-latn')}</div>
+            <div><b>بواسطة المستخدم:</b> {user?.name || 'مسؤول النظام'}</div>
+            <div style={{ fontFamily: 'monospace' }}><b>رقم المرجع (Report ID):</b> {Math.random().toString(36).substring(2, 10).toUpperCase()} - {Date.now().toString().slice(-6)}</div>
+          </div>
         </div>
-        <hr style={{ margin: '0.6rem 0', borderColor: '#ccc' }} />
+        <hr style={{ margin: '0.6rem 0', borderColor: '#000', borderWidth: 2 }} />
       </div>
 
       {/* الترويسة */}

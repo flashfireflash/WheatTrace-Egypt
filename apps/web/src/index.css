@@ -990,3 +990,59 @@ a { text-decoration: none; color: inherit; }
   .stat-card__value { font-size: 1.4rem; }
   .qty-stepper__btn { width: 36px; height: 36px; }
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+  body, html {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+  .no-print, .sidebar, .topbar, .btn, .input, button, select {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .reports-page {
+    padding: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+  .card, .table-wrapper {
+    box-shadow: none !important;
+    border: none !important;
+    background: none !important;
+    page-break-inside: avoid;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+  th, td {
+    border: 1px solid #000 !important;
+    padding: 0.5rem !important;
+    color: black !important;
+    background: white !important;
+  }
+  .badge {
+    border: 1px solid #333 !important;
+    color: #000 !important;
+    background: none !important;
+  }
+}
+

@@ -40,6 +40,19 @@ public class WheatTraceDbContext : DbContext
     public DbSet<AuditLog>         AuditLogs         => Set<AuditLog>();
     public DbSet<SeasonSnapshot>   SeasonSnapshots   => Set<SeasonSnapshot>();
 
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries<BaseEntity>()
+            .Where(e => e.State == EntityState.Modified);
+
+        foreach (var entry in entries)
+        {
+            entry.Entity.UpdatedAt = DateTime.UtcNow;
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -282,72 +282,76 @@ public class ReportsController : ControllerBase
         if (authorityId.HasValue)   query = query.Where(s => s.AuthorityId == authorityId.Value);
         if (siteId.HasValue)        query = query.Where(s => s.Id == siteId.Value);
 
-        var sites = await query.ToListAsync();
-
-        // تحويل نطاق التاريخ إذا كان محدداً
-        var sd = DateOnly.TryParse(startDate, out var sdParsed) ? sdParsed : (DateOnly?)null;
-        var ed = DateOnly.TryParse(endDate,   out var edParsed) ? edParsed : (DateOnly?)null;
-
-        // جلب المرفوضات بشكل منفصل لتجنب مشاكل EF join
-        var siteIds = sites.Select(s => s.Id).ToList();
-        var rejections = await _db.Rejections
-            .Where(r => siteIds.Contains(r.DailyEntry!.SiteId))
-            .Select(r => new { r.DailyEntry!.SiteId, r.TotalRejectionTon })
-            .ToListAsync();
-
-        var rejectionsBySite = rejections
-            .GroupBy(r => r.SiteId)
-            .ToDictionary(g => g.Key, g => g.Sum(r => r.TotalRejectionTon));
-
         // بناء الهرم: محافظة -> جهة -> مواقع
-        var result = sites
-            .GroupBy(s => s.Governorate?.Name ?? "بدون محافظة")
+        var resultRows = await query.Select(s => new
+        {
+            s.Id,
+            SiteName = s.Name,
+            GovernorateName = s.Governorate!.Name,
+            AuthorityName = s.Authority!.Name,
+            s.Status,
+            s.CapacityKg,
+            s.CurrentStockKg,
+            s.TotalReceivedKg,
+            W225Sum = s.DailyEntries
+                .Where(e => (!sd.HasValue || e.Date >= sd.Value) && (!ed.HasValue || e.Date <= ed.Value))
+                .Sum(e => (long)e.Wheat22_5Ton * 1000 + e.Wheat22_5Kg),
+            W23Sum = s.DailyEntries
+                .Where(e => (!sd.HasValue || e.Date >= sd.Value) && (!ed.HasValue || e.Date <= ed.Value))
+                .Sum(e => (long)e.Wheat23Ton * 1000 + e.Wheat23Kg),
+            W235Sum = s.DailyEntries
+                .Where(e => (!sd.HasValue || e.Date >= sd.Value) && (!ed.HasValue || e.Date <= ed.Value))
+                .Sum(e => (long)e.Wheat23_5Ton * 1000 + e.Wheat23_5Kg),
+            OpenDate = s.LifecycleEvents
+                .Where(e => e.EventType == Domain.Enums.SiteEventType.Opened || e.EventType == Domain.Enums.SiteEventType.Resumed)
+                .OrderByDescending(e => e.EventDate)
+                .Select(e => (DateTime?)e.EventDate)
+                .FirstOrDefault(),
+            CloseDate = s.LifecycleEvents
+                .Where(e => e.EventType == Domain.Enums.SiteEventType.Closed || e.EventType == Domain.Enums.SiteEventType.Suspended)
+                .OrderByDescending(e => e.EventDate)
+                .Select(e => (DateTime?)e.EventDate)
+                .FirstOrDefault()
+        }).ToListAsync();
+
+        var siteIds = resultRows.Select(s => s.Id).ToList();
+        
+        var rejectionsBySite = await _db.Rejections
+            .Where(r => siteIds.Contains(r.DailyEntry!.SiteId))
+            .GroupBy(r => r.DailyEntry!.SiteId)
+            .Select(g => new { SiteId = g.Key, TotalRej = g.Sum(r => r.TotalRejectionTon) })
+            .ToDictionaryAsync(r => r.SiteId, r => r.TotalRej);
+
+        var result = resultRows
+            .GroupBy(s => s.GovernorateName ?? "بدون محافظة")
             .Select(govGroup => new
             {
                 Governorate = govGroup.Key,
                 Authorities = govGroup
-                    .GroupBy(s => s.Authority?.Name ?? "أخرى")
+                    .GroupBy(s => s.AuthorityName ?? "أخرى")
                     .Select(authGroup => new
                     {
                         Authority = authGroup.Key,
-                        Sites = authGroup.Select(s =>
+                        Sites = authGroup.Select(row =>
                         {
-                            // تطبيق تصفية النطاق الزمني على الإدخالات اليومية
-                            var allEntries = s.DailyEntries.AsEnumerable();
-                            if (sd.HasValue) allEntries = allEntries.Where(e => e.Date >= sd.Value);
-                            if (ed.HasValue) allEntries = allEntries.Where(e => e.Date <= ed.Value);
-                            var entryList = allEntries.ToList();
-
-                            var w225  = entryList.Sum(e => (long)e.Wheat22_5Ton * 1000 + e.Wheat22_5Kg);
-                            var w23   = entryList.Sum(e => (long)e.Wheat23Ton   * 1000 + e.Wheat23Kg);
-                            var w235  = entryList.Sum(e => (long)e.Wheat23_5Ton * 1000 + e.Wheat23_5Kg);
-                            var total = w225 + w23 + w235;
-                            var rejectTon = rejectionsBySite.GetValueOrDefault(s.Id, 0);
-
-                            var openedEvent = s.LifecycleEvents
-                                .Where(e => e.EventType == Domain.Enums.SiteEventType.Opened
-                                         || e.EventType == Domain.Enums.SiteEventType.Resumed)
-                                .OrderByDescending(e => e.EventDate).FirstOrDefault();
-                            var closedEvent = s.LifecycleEvents
-                                .Where(e => e.EventType == Domain.Enums.SiteEventType.Closed
-                                         || e.EventType == Domain.Enums.SiteEventType.Suspended)
-                                .OrderByDescending(e => e.EventDate).FirstOrDefault();
+                            var rejectTon = rejectionsBySite.GetValueOrDefault(row.Id, 0);
+                            var total = row.W225Sum + row.W23Sum + row.W235Sum;
 
                             return new
                             {
-                                s.Id,
-                                SiteName     = s.Name,
-                                s.Status,
-                                s.CapacityKg,
-                                s.CurrentStockKg,
-                                s.TotalReceivedKg,
-                                W22_5Ton = w225 / 1000, W22_5Kg  = w225 % 1000,
-                                W23Ton   = w23  / 1000, W23Kg    = w23  % 1000,
-                                W23_5Ton = w235 / 1000, W23_5Kg  = w235 % 1000,
+                                row.Id,
+                                row.SiteName,
+                                row.Status,
+                                row.CapacityKg,
+                                row.CurrentStockKg,
+                                row.TotalReceivedKg,
+                                W22_5Ton = row.W225Sum / 1000, W22_5Kg  = row.W225Sum % 1000,
+                                W23Ton   = row.W23Sum  / 1000, W23Kg    = row.W23Sum  % 1000,
+                                W23_5Ton = row.W235Sum / 1000, W23_5Kg  = row.W235Sum % 1000,
                                 TotalTon = total / 1000, TotalKg  = total % 1000,
                                 RejectedTon = rejectTon, RejectedKg = 0,
-                                OpenDate  = openedEvent?.EventDate,
-                                CloseDate = closedEvent?.EventDate
+                                OpenDate  = row.OpenDate,
+                                CloseDate = row.CloseDate
                             };
                         })
                     })

@@ -51,16 +51,16 @@ export default function ManagerEntriesGrid() {
     queryFn: () => api.get('/daily-entries/grid', { params: { date: dateKey } }).then(r => Array.isArray(r.data) ? r.data : r.data.items ?? []),
   });
 
-  // إرسال طلب التعديل
+  // تعديل مباشر من المدير (يُطبَّق فوراً ويُرسَل إشعار للمراقبين)
   const { mutate: sendEditRequest, isPending: sending } = useMutation({
-    mutationFn: () => api.post(`/daily-entries/${editModal!.entry.id}/manager-edit-request`, {
+    mutationFn: () => api.post(`/daily-entries/${editModal!.entry.id}/manager-direct-edit`, {
       reason: editForm.reason,
       newWheat22_5: { ton: editForm.w22_5Ton, kg: editForm.w22_5Kg },
       newWheat23:   { ton: editForm.w23Ton,   kg: editForm.w23Kg },
       newWheat23_5: { ton: editForm.w23_5Ton, kg: editForm.w23_5Kg },
     }),
     onSuccess: () => {
-      toast.success('تم إرسال طلب التعديل لمراقب العمليات ✅');
+      toast.success('تم تطبيق التعديل وإخطار المراقبين ✅');
       qc.invalidateQueries({ queryKey: ['daily-entries'] });
       setEditModal(null);
     },
@@ -302,17 +302,17 @@ function ManagerEditModal({ entry, form, setForm, onSubmit, onClose, isPending }
       <div className="card bounce-in" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 520 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontWeight: 900, fontSize: '1.05rem' }}>
-            <Edit2 size={17} style={{ verticalAlign: 'middle', marginLeft: '0.4rem', color: '#e65100' }} />
-            طلب تعديل كمية — {entry.siteName}
+            <Edit2 size={17} style={{ verticalAlign: 'middle', marginLeft: '0.4rem', color: '#16a34a' }} />
+            تعديل كمية — {entry.siteName}
           </h3>
           <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}><X size={18} /></button>
         </div>
 
         <div style={{
-          background: '#fff3e0', border: '1px solid #ffb74d',
-          borderRadius: 'var(--r-md)', padding: '0.75rem', fontSize: '0.8rem', color: '#b45309', marginBottom: '1rem',
+          background: '#e8f5e9', border: '1px solid #a5d6a7',
+          borderRadius: 'var(--r-md)', padding: '0.75rem', fontSize: '0.8rem', color: '#1b5e20', marginBottom: '1rem',
         }}>
-          ⚠️ سيُرسَل هذا الطلب لـ <strong>مراقب العمليات</strong> للموافقة. الكميات لن تتغير إلا بعد الاعتماد.
+          ✅ سيتم تطبيق هذا التعديل فوراً وإرسال إشعار للمراقبين فقط.
         </div>
 
         <form onSubmit={e => { e.preventDefault(); onSubmit(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -347,8 +347,8 @@ function ManagerEditModal({ entry, form, setForm, onSubmit, onClose, isPending }
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#e65100' }} disabled={isPending || !form.reason.trim()}>
-              {isPending ? <Loader2 size={15} className="spin" /> : <Edit2 size={15} />} إرسال طلب التعديل
+            <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#16a34a' }} disabled={isPending || !form.reason.trim()}>
+              {isPending ? <Loader2 size={15} className="spin" /> : <Edit2 size={15} />} تطبيق التعديل مباشرة
             </button>
             <button type="button" className="btn btn-ghost" onClick={onClose}>إلغاء</button>
           </div>

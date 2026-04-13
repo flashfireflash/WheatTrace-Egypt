@@ -114,8 +114,8 @@ public class AssignmentsController : ControllerBase
 
         // ── 3. Inspector exists ─────────────────────────────────────────────
         var inspector = await _db.Users.FindAsync(request.InspectorId);
-        if (inspector is null || inspector.Role != UserRole.Inspector)
-            return BadRequest(new { message = "المستخدم ليس مفتشاً" });
+        if (inspector is null || (inspector.Role != UserRole.Inspector && inspector.Role != UserRole.GovernorateManager))
+            return BadRequest(new { message = "المستخدم ليس مفتشاً ولا مدير محافظة" });
 
         // ── 4. Determine whether site is in dual-shift mode on this date ────
         bool isDualShift = site.IsShiftEnabled;

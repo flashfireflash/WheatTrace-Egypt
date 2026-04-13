@@ -33,7 +33,7 @@ export default function ManagerSites() {
     queryFn: () => api.get('/users').then(r => Array.isArray(r.data) ? r.data : r.data?.items ?? []),
   });
   const rawInspectors = useMemo(() => allUsers.filter((u: any) => u.role === 'Inspector'), [allUsers]);
-  const inspectors = useMemo(() => user ? [{ id: user.userId, name: `${user.name} (أنا - مدير المحافظة الطارئ)` }, ...rawInspectors] : rawInspectors, [rawInspectors, user]);
+  const inspectors = useMemo(() => user ? [{ id: user.userId, name: user.name }, ...rawInspectors] : rawInspectors, [rawInspectors, user]);
 
   // الورديات إذا محتاجين
   const { data: shifts = [] } = useQuery<any[]>({

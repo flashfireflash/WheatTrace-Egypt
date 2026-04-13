@@ -69,8 +69,8 @@ export default function ManagerAssignments() {
          .then(r => (Array.isArray(r.data) ? r.data : r.data.items ?? []).filter((u: any) => u.role === 'Inspector')),
   });
 
-  // إضافة حساب مدير المحافظة نفسه للقائمة كحالة طوارئ
-  const inspectors = user ? [{ id: user.userId, name: `${user.name} (أنا - مدير المحافظة الطارئ)` }, ...rawInspectors] : rawInspectors;
+  // إضافة حساب مدير المحافظة نفسه للقائمة
+  const inspectors = user ? [{ id: user.userId, name: user.name }, ...rawInspectors] : rawInspectors;
 
   // استقدام المواقع الجغرافية داخل محيط المحافظة
   const { data: sites = [] } = useQuery<Site[]>({

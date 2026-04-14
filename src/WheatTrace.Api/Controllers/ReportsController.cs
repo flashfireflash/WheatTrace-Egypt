@@ -265,6 +265,9 @@ public class ReportsController : ControllerBase
         [FromQuery] string? startDate,
         [FromQuery] string? endDate)
     {
+        DateOnly? sd = DateOnly.TryParse(startDate, out var parsedSd) ? parsedSd : null;
+        DateOnly? ed = DateOnly.TryParse(endDate, out var parsedEd) ? parsedEd : null;
+
         var query = _db.StorageSites
             .Include(s => s.Governorate)
             .Include(s => s.Authority)
@@ -305,12 +308,12 @@ public class ReportsController : ControllerBase
             OpenDate = s.LifecycleEvents
                 .Where(e => e.EventType == Domain.Enums.SiteEventType.Opened || e.EventType == Domain.Enums.SiteEventType.Resumed)
                 .OrderByDescending(e => e.EventDate)
-                .Select(e => (DateTime?)e.EventDate)
+                .Select(e => (DateOnly?)e.EventDate)
                 .FirstOrDefault(),
             CloseDate = s.LifecycleEvents
                 .Where(e => e.EventType == Domain.Enums.SiteEventType.Closed || e.EventType == Domain.Enums.SiteEventType.Suspended)
                 .OrderByDescending(e => e.EventDate)
-                .Select(e => (DateTime?)e.EventDate)
+                .Select(e => (DateOnly?)e.EventDate)
                 .FirstOrDefault()
         }).ToListAsync();
 
@@ -364,7 +367,7 @@ public class ReportsController : ControllerBase
     /// Inspector: Get their own quantities across a date range.
     /// </summary>
     [HttpGet("inspector/quantities")]
-    [Authorize(Roles = "Inspector")]
+    [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult> GetMyQuantities([FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
     {
         var entries = await _db.DailyEntries

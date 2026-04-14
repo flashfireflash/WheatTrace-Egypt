@@ -72,7 +72,7 @@ public class DailyEntriesController : ControllerBase
 
     /// <summary>Inspector: create a daily entry. Site/shift auto-resolved from assignment.</summary>
     [HttpPost]
-    [Authorize(Roles = "Inspector")]
+    [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult<DailyEntryDto>> Create([FromBody] CreateDailyEntryRequest request)
     {
         // 1. Resolve assignment
@@ -147,7 +147,7 @@ public class DailyEntriesController : ControllerBase
 
     /// <summary>Inspector: update entry within 1-hour window.</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Inspector")]
+    [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult<DailyEntryDto>> Update(Guid id, [FromBody] UpdateDailyEntryRequest request)
     {
         var entry = await _db.DailyEntries
@@ -207,7 +207,7 @@ public class DailyEntriesController : ControllerBase
 
     /// <summary>Inspector: submit edit request after 1-hour lock.</summary>
     [HttpPost("{id:guid}/edit-requests")]
-    [Authorize(Roles = "Inspector")]
+    [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult> RequestEdit(Guid id, [FromBody] CreateEditRequest request)
     {
         var entry = await _db.DailyEntries.FindAsync(id);
@@ -544,7 +544,7 @@ public class DailyEntriesController : ControllerBase
 
     /// <summary>Offline sync batch — server-authoritative validation on each item.</summary>
     [HttpPost("sync-batches")]
-    [Authorize(Roles = "Inspector")]
+    [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult<IEnumerable<SyncBatchResult>>> SyncBatch([FromBody] SyncBatchRequest request)
     {
         var results = new List<SyncBatchResult>();

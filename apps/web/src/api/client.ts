@@ -73,6 +73,12 @@ export const listAssignments = (params: object) =>
 export const assignInspector = (data: object) =>
   api.post('/assignments', data).then((r) => r.data);
 
+export const updateAssignmentEndDate = (id: string, data: object) =>
+  api.patch(`/assignments/${id}/end-date`, data).then((r) => r.data);
+
+export const deactivateAssignment = (id: string) =>
+  api.delete(`/assignments/${id}`).then((r) => r.data);
+
 // ── التقارير والإحصائيات (Reports) ──────────────────────────────────────────
 export const getDailySummary = (params: object) =>
   api.get('/reports/daily-summary', { params }).then((r) => r.data);

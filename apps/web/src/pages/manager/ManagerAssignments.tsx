@@ -7,7 +7,8 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
   CalendarDays, Users, Warehouse, Plus, Trash2,
-  RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Loader2, Check, X
+  RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Loader2, Check, X,
+  Clock, Pencil
 } from 'lucide-react';
 
 interface Assignment {
@@ -19,6 +20,8 @@ interface Assignment {
   governorateName: string;
   shiftName?: string;
   date: string;
+  endDate?: string | null;
+  notes?: string | null;
   assignmentStatus: string;
   isActive: boolean;
 }
@@ -49,7 +52,10 @@ export default function ManagerAssignments() {
   const qc = useQueryClient();
   const [selectedDate, setDate] = useState(new Date());
   const [showModal, setModal] = useState(false);
-  const [form, setForm] = useState({ inspectorId: '', siteId: '', shiftId: '' });
+  const [form, setForm] = useState({ inspectorId: '', siteId: '', shiftId: '', endDate: '' });
+
+  // حالة نافذة تعديل المدة
+  const [editDurationModal, setEditDurationModal] = useState<{ id: string; inspectorName: string; siteName: string; date: string; endDate: string; notes: string } | null>(null);
 
   const dateKey = dateStr(selectedDate);
 
@@ -94,14 +100,32 @@ export default function ManagerAssignments() {
       siteId:      form.siteId,
       shiftId:     form.shiftId || null,
       date:        dateKey,
+      endDate:     form.endDate || null,
     }),
     onSuccess: () => {
       toast.success('تمت مصادقة التعيين الاستراتيجي بنجاح ✅');
       qc.invalidateQueries({ queryKey: ['assignments'] });
       setModal(false);
-      setForm({ inspectorId: '', siteId: '', shiftId: '' });
+      setForm({ inspectorId: '', siteId: '', shiftId: '', endDate: '' });
     },
     onError: (e: any) => toast.error(e.response?.data?.message ?? 'خلل فني في المعالجة'),
+  });
+
+  // تعديل مدة التعيين
+  const { mutate: updateDuration, isPending: updatingDuration } = useMutation({
+    mutationFn: () => {
+      if (!editDurationModal) throw new Error('لا يوجد تعيين محدد');
+      return api.patch(`/assignments/${editDurationModal.id}/end-date`, {
+        endDate: editDurationModal.endDate || null,
+        notes:   editDurationModal.notes || null,
+      });
+    },
+    onSuccess: () => {
+      toast.success('تم تحديث مدة التعيين بنجاح ✅');
+      qc.invalidateQueries({ queryKey: ['assignments'] });
+      setEditDurationModal(null);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message ?? 'تعذر تحديث المدة'),
   });
 
   // فسخ قرار تكليف معين (مثلاً لمرض أو عذر طارئ للمفتش)
@@ -176,9 +200,10 @@ export default function ManagerAssignments() {
               <tr>
                 <th>كادر التفتيش</th>
                 <th>الصومعة التخزينية</th>
+                <th>مدة التعيين</th>
                 <th>طبيعة الوردية</th>
                 <th>الوضعية الرقابية</th>
-                <th>مقاطعة العقد</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -209,6 +234,22 @@ export default function ManagerAssignments() {
                         <span style={{ color: 'var(--text-muted)' }}>—</span>
                       )}
                     </td>
+                    {/* عمود مدة التعيين (من/إلى) */}
+                    <td style={{ fontSize: '0.8rem' }}>
+                      {a ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <Clock size={12} color="var(--brand)" />
+                            <span style={{ fontWeight: 600 }}>من: {a.date?.slice(0, 10)}</span>
+                          </div>
+                          <div style={{ color: a.endDate ? 'var(--text-secondary)' : 'var(--text-muted)', fontStyle: a.endDate ? 'normal' : 'italic' }}>
+                            {a.endDate ? `إلى: ${a.endDate.slice(0, 10)}` : 'مفتوح المدة'}
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       {a?.shiftName ?? '—'}
                     </td>
@@ -224,18 +265,38 @@ export default function ManagerAssignments() {
                       )}
                     </td>
                     <td>
+                      <div style={{ display: 'flex', gap: '0.3rem' }}>
                       {a && a.isActive ? (
-                        <button
-                          className="btn btn-ghost btn-icon btn-sm"
-                          style={{ color: 'var(--danger)' }}
-                          title="طرد وفسخ العقد الميداني"
-                          onClick={() => {
-                            if (window.confirm(`هل أنت واثق من شطب تكليف الكادر ${inspector.name} من الخدمة في هذا اليوم؟`))
-                              deactivate(a.id);
-                          }}
-                        >
-                          <X size={15} />
-                        </button>
+                        <>
+                          {/* زر تعديل المدة */}
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            style={{ color: 'var(--brand)' }}
+                            title="تعديل مدة التعيين"
+                            onClick={() => setEditDurationModal({
+                              id: a.id,
+                              inspectorName: inspector.name,
+                              siteName: a.siteName,
+                              date: a.date?.slice(0, 10),
+                              endDate: a.endDate?.slice(0, 10) ?? '',
+                              notes: a.notes ?? '',
+                            })}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          {/* زر إلغاء التعيين */}
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            style={{ color: 'var(--danger)' }}
+                            title="إلغاء التعيين"
+                            onClick={() => {
+                              if (window.confirm(`هل أنت واثق من شطب تكليف الكادر ${inspector.name} من الخدمة في هذا اليوم؟`))
+                                deactivate(a.id);
+                            }}
+                          >
+                            <X size={15} />
+                          </button>
+                        </>
                       ) : !a ? (
                         <button
                           className="btn btn-primary btn-icon btn-sm"
@@ -248,6 +309,7 @@ export default function ManagerAssignments() {
                           <Plus size={15} />
                         </button>
                       ) : null}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -315,14 +377,95 @@ export default function ManagerAssignments() {
                 </div>
               )}
 
+              {/* حقل تاريخ انتهاء التعيين (اختياري) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                  <Clock size={14} style={{ verticalAlign: 'middle', marginLeft: '0.25rem' }} />
+                  تاريخ الانتهاء (اختياري)
+                </label>
+                <input
+                  type="date"
+                  className="input"
+                  value={form.endDate}
+                  onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                  min={dateKey}
+                  placeholder="اترك فارغاً للتعيين المفتوح"
+                />
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  اترك الحقل فارغاً إذا كان التعيين مفتوح المدة — يمكنك تعديله لاحقاً
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={assigning || !form.inspectorId || !form.siteId}>
                   {assigning
                     ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />تنفيذ البث...</>
-                    : <><Check size={16} />دمغ القرار</>
+                    : <><Check size={16} />دمغ القرار</>}
                   }
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>نبذ التعديلات</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── نافذة تعديل مدة التعيين (Edit Duration Modal) ── */}
+      {editDurationModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={() => setEditDurationModal(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} />
+          <div className="card bounce-in" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 440, padding: 'clamp(1.25rem, 4vw, 1.75rem)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <Pencil size={18} style={{ marginLeft: '0.4rem', verticalAlign: 'middle', color: 'var(--brand)' }} />
+                تعديل مدة تعيين: {editDurationModal.inspectorName}
+              </h3>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setEditDurationModal(null)}><X size={18} /></button>
+            </div>
+
+            {/* معلومات التعيين الحالي */}
+            <div style={{ background: 'var(--surface-1)', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+              <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>الموقع: {editDurationModal.siteName}</div>
+              <div style={{ color: 'var(--text-muted)' }}>تاريخ البدء: {editDurationModal.date}</div>
+            </div>
+
+            <form onSubmit={e => { e.preventDefault(); updateDuration(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                  <Clock size={14} style={{ verticalAlign: 'middle', marginLeft: '0.25rem' }} />
+                  تاريخ الانتهاء الجديد
+                </label>
+                <input
+                  type="date"
+                  className="input"
+                  value={editDurationModal.endDate}
+                  onChange={e => setEditDurationModal(prev => prev ? { ...prev, endDate: e.target.value } : null)}
+                  min={editDurationModal.date}
+                />
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  اترك فارغاً لجعل التعيين مفتوح المدة
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>ملاحظات (اختياري)</label>
+                <textarea
+                  className="input"
+                  rows={2}
+                  value={editDurationModal.notes}
+                  onChange={e => setEditDurationModal(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                  placeholder="سبب التعديل أو ملاحظات..."
+                  style={{ resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={updatingDuration}>
+                  {updatingDuration
+                    ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />جاري التحديث...</>
+                    : <><Check size={16} />حفظ التعديل</>
+                  }
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditDurationModal(null)}>إلغاء</button>
               </div>
             </form>
           </div>

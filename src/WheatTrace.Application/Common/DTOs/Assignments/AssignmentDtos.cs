@@ -6,7 +6,8 @@ public record AssignInspectorRequest(
     Guid InspectorId,
     Guid SiteId,
     Guid? ShiftId,
-    DateOnly Date
+    DateOnly Date,
+    DateOnly? EndDate = null
 );
 
 public record AssignmentDto(

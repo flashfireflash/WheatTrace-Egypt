@@ -197,7 +197,8 @@ public class AssignmentsController : ControllerBase
             InspectorId = request.InspectorId,
             SiteId      = request.SiteId,
             ShiftId     = isDualShift ? request.ShiftId : null,
-            Date        = request.Date
+            Date        = request.Date,
+            EndDate     = request.EndDate
         };
 
         _db.InspectorAssignments.Add(assignment);
@@ -216,6 +217,17 @@ public class AssignmentsController : ControllerBase
         await _db.Entry(assignment).Reference(a => a.Inspector).LoadAsync();
         await _db.Entry(assignment).Reference(a => a.Site).LoadAsync();
         await _db.Entry(assignment).Reference(a => a.Shift).LoadAsync();
+
+        // 🔔 إشعار المفتش بالتعيين الجديد مع تفاصيل الفترة الزمنية
+        var dateRangeText = request.EndDate.HasValue
+            ? $"في الفترة من {request.Date:d/M/yyyy} إلى {request.EndDate:d/M/yyyy}"
+            : $"اعتباراً من {request.Date:d/M/yyyy} (مفتوح المدة)";
+        await SendInspectorNotification(
+            inspectorId:  request.InspectorId,
+            siteId:       request.SiteId,
+            senderUserId: _currentUser.UserId,
+            message:      $"📌 تم تعيينك على موقع '{site.Name}' {dateRangeText}."
+        );
 
         return CreatedAtAction(nameof(GetMine), MapDto(assignment));
     }
@@ -260,12 +272,24 @@ public class AssignmentsController : ControllerBase
         if (_currentUser.Role == "GovernorateManager" && assignment.Site!.GovernorateId != _currentUser.GovernorateId)
             return Forbid();
 
+        var oldEndDate = assignment.EndDate;
         assignment.EndDate   = req.EndDate;
         assignment.Notes     = req.Notes;
         assignment.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
         await _audit.LogAsync("UpdateEndDate", "Assignment", id, null, new { req.EndDate, req.Notes });
+
+        // 🔔 إشعار المفتش بتعديل مدة التعيين
+        var newDateText = req.EndDate.HasValue
+            ? $"تم تعديل مدة تعيينك على موقع '{assignment.Site!.Name}' — الفترة الجديدة: من {assignment.Date:d/M/yyyy} إلى {req.EndDate:d/M/yyyy}."
+            : $"تم إلغاء تاريخ انتهاء تعيينك على موقع '{assignment.Site!.Name}' — أصبح التعيين مفتوح المدة.";
+        await SendInspectorNotification(
+            inspectorId:  assignment.InspectorId,
+            siteId:       assignment.SiteId,
+            senderUserId: _currentUser.UserId,
+            message:      $"🔄 {newDateText}"
+        );
 
         return Ok(new { message = "تم تحديث تاريخ انتهاء التعيين" });
     }

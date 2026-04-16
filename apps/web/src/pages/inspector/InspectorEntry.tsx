@@ -82,10 +82,12 @@ export default function InspectorEntry() {
   });
 
   // ── 2. جلب بيانات الإدخال السابقة للحفاظ على حالة اليوم (Fetch Existing Entry) ──
+  // ⚠️ تم إصلاح شرط التفعيل: isHoliday غير موجود في AssignmentDto مما كان يُعطّل الاستعلام دائماً!
+  // النتيجة القديمة: existingEntry = null دائماً → فورم فاضي → 409 Conflict عند محاولة الحفظ
   const { data: existingEntry, isLoading: loadingEntry } = useQuery({
     queryKey: ['my-entry', selectedDate],
     queryFn: () => getMyEntry(selectedDate),
-    enabled: !!assignment && assignment.isHoliday === false, // لا تطلب الاستعلام لو كان الموقع باجازة رسمية
+    enabled: !!assignment, // يكفي وجود التعيين لجلب السجل الموجود
     retry: 1,
   });
 

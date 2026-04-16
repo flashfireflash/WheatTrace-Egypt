@@ -138,21 +138,36 @@ export default function InspectorEntry() {
   const { mutate: save, isPending: saving } = useMutation({
     mutationFn: async () => {
       const body = { date: selectedDate, wheat22_5, wheat23, wheat23_5, notes };
-      // توجيه الطلب لتحديث (PUT) أو إنشاء (POST) بناءً على وجود معرف المدخلات.
       let result;
-      if (existingEntry?.isEditable) result = await updateEntry(existingEntry.id, body);
-      else if (!existingEntry)       result = await createEntry({ ...body, date: selectedDate });
-      else throw new Error('انتهت فترة التعديل المباشر المسموح بها برمجياً');
+      let entryId: string | undefined;
 
-      // حفظ بيانات المرفوضات إن وُجدت (بعد نجاح حفظ الكميات)
-      const entryId = result?.id ?? existingEntry?.id;
+      if (existingEntry?.isEditable) {
+        // تحديث الكميات (ضمن فترة التعديل)
+        result = await updateEntry(existingEntry.id, body);
+        entryId = result?.id ?? existingEntry.id;
+      } else if (!existingEntry) {
+        // إنشاء إدخال جديد
+        result = await createEntry({ ...body, date: selectedDate });
+        entryId = result?.id;
+      } else {
+        // الإدخال موجود لكن فترة تعديل الكميات انتهت — نسمح فقط بحفظ المرفوضات
+        entryId = existingEntry.id;
+      }
+
+      // حفظ بيانات المرفوضات إن وُجدت (مستقل عن قفل الكميات)
       if (entryId && rejection.totalRejectionTon > 0) {
         await upsertRejection(entryId, rejection);
       }
+
+      // إذا لم يحدث أي حفظ (لا كميات ولا رفض)
+      if (!result && rejection.totalRejectionTon <= 0) {
+        throw new Error('انتهت فترة التعديل المباشر المسموح بها برمجياً — ولا توجد بيانات مرفوضات للحفظ');
+      }
+
       return result;
     },
     onSuccess: () => {
-      toast.success('تم حفظ الكميات بنجاح ✅');
+      toast.success('تم الحفظ بنجاح ✅');
       qc.invalidateQueries({ queryKey: ['my-entry', selectedDate] });
     },
     onError: (err: any) => {

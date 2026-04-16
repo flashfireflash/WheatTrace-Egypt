@@ -372,6 +372,7 @@ public class ReportsController : ControllerBase
     {
         var entries = await _db.DailyEntries
             .Include(e => e.Site)
+            .Include(e => e.Rejection)
             .Where(e => e.InspectorId == _cu.UserId && e.Date >= startDate && e.Date <= endDate)
             .ToListAsync();
 
@@ -383,6 +384,7 @@ public class ReportsController : ControllerBase
         var sum235Kg  = entries.Sum(e => e.Wheat23_5Kg);
 
         var totalTon = sum225Ton + sum23Ton + sum235Ton + (sum225Kg + sum23Kg + sum235Kg) / 1000M;
+        var totalRejectedTon = entries.Sum(e => e.Rejection?.TotalRejectionTon ?? 0M);
 
         return Ok(new
         {
@@ -390,6 +392,7 @@ public class ReportsController : ControllerBase
             EndDate = endDate,
             TotalEntries = entries.Count,
             TotalQuantityTon = totalTon,
+            TotalRejectedTon = totalRejectedTon,
             Wheat22_5Ton = sum225Ton + sum225Kg / 1000M,
             Wheat23Ton   = sum23Ton  + sum23Kg  / 1000M,
             Wheat23_5Ton = sum235Ton + sum235Kg / 1000M,
@@ -397,7 +400,8 @@ public class ReportsController : ControllerBase
             {
                 e.Date,
                 SiteName = e.Site?.Name,
-                TotalTon = e.TotalQtyKg / 1000M
+                TotalTon = e.TotalQtyKg / 1000M,
+                RejectedTon = e.Rejection?.TotalRejectionTon ?? 0M
             }).OrderByDescending(e => e.Date)
         });
     }

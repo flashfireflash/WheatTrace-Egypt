@@ -154,14 +154,14 @@ export default function InspectorEntry() {
         entryId = existingEntry.id;
       }
 
-      // حفظ بيانات المرفوضات إن وُجدت (مستقل عن قفل الكميات)
-      if (entryId && rejection.totalRejectionTon > 0) {
+      // حفظ بيانات المرفوضات (مستقل عن قفل الكميات ومستمر في حفظ التصفير لو أراد المفتش التراجع)
+      if (entryId) {
         await upsertRejection(entryId, rejection);
       }
 
-      // إذا لم يحدث أي حفظ (لا كميات ولا رفض)
-      if (!result && rejection.totalRejectionTon <= 0) {
-        throw new Error('انتهت فترة التعديل المباشر المسموح بها برمجياً — ولا توجد بيانات مرفوضات للحفظ');
+      // توقف إلزامي لو الإدخال وهمي بالكامل (لا كميات ولا مرفوضات ولا ملاحظات)
+      if (!result && rejection.totalRejectionTon <= 0 && !notes.trim()) {
+        throw new Error('انتهت فترة التعديل، أو لا يوجد بيانات فعلية للحفظ!');
       }
 
       return result;
@@ -225,7 +225,6 @@ export default function InspectorEntry() {
   const { mutate: saveRejectionOnly, isPending: savingRejection } = useMutation({
     mutationFn: async () => {
       if (!existingEntry?.id) throw new Error('لا يوجد إدخال سابق لربط المرفوضات به');
-      if (rejection.totalRejectionTon <= 0) throw new Error('أدخل كمية الرفض أولاً');
       return upsertRejection(existingEntry.id, rejection);
     },
     onSuccess: () => {

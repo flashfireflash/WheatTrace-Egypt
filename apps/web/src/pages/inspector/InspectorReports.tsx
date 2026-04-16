@@ -141,7 +141,7 @@ export default function InspectorReports() {
           ) : (
             <>
               {/* عرض علوي للمجاميع العامة البارزة */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                 <div style={{ background: '#e8f5e9', padding: '1rem', borderRadius: '0.75rem', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.8rem', color: '#2e7d32', fontWeight: 700 }}>صافي إجمالي العُهدة (طن)</div>
                   <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1b5e20' }}>
@@ -152,6 +152,12 @@ export default function InspectorReports() {
                   <div style={{ fontSize: '0.8rem', color: '#1565c0', fontWeight: 700 }}>عدد دورات الإدخال</div>
                   <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0d47a1' }}>
                     {quantities?.totalEntries}
+                  </div>
+                </div>
+                <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 700 }}>إجمالي المرفوض (طن)</div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#991b1b' }}>
+                    {quantities?.totalRejectedTon?.toFixed(3) ?? 0.000}
                   </div>
                 </div>
               </div>

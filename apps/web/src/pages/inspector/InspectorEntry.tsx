@@ -221,6 +221,22 @@ export default function InspectorEntry() {
     }
   });
 
+  // ── 8. حفظ المرفوضات بشكل مستقل (عند انتهاء فترة تعديل الكميات) ─────────────
+  const { mutate: saveRejectionOnly, isPending: savingRejection } = useMutation({
+    mutationFn: async () => {
+      if (!existingEntry?.id) throw new Error('لا يوجد إدخال سابق لربط المرفوضات به');
+      if (rejection.totalRejectionTon <= 0) throw new Error('أدخل كمية الرفض أولاً');
+      return upsertRejection(existingEntry.id, rejection);
+    },
+    onSuccess: () => {
+      toast.success('تم حفظ بيانات المرفوضات بنجاح ✅');
+      qc.invalidateQueries({ queryKey: ['my-entry', selectedDate] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'تعذر حفظ المرفوضات');
+    },
+  });
+
   // تحديد مسار شجرة التصيير (State Matrix Conditions)
   const isEditMode      = !!existingEntry;
   const isEditable      = !existingEntry || existingEntry.isEditable;
@@ -568,7 +584,32 @@ export default function InspectorEntry() {
         </form>
       )}
 
-      {/* ===== 5. نافذة تقديم التماسات التأخير (Out of Window Request) ===== */}
+      {/* ===== 5. قسم حفظ المرفوضات المستقل (عند انتهاء فترة تعديل الكميات) ===== */}
+      {needsRequest && existingEntry && (
+        <div className="card fade-in stagger-4" style={{ borderColor: '#fed7aa' }}>
+          <h3 style={{ fontSize: '0.95rem', color: '#d97706', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            ⚠️ تعديل الكميات المرفوضة
+          </h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            فترة تعديل الكميات انتهت، لكن يمكنك تسجيل أو تعديل بيانات الرفض في أي وقت.
+          </p>
+
+          <RejectionForm value={rejection} onChange={setRejection} />
+
+          <button
+            className="btn btn-accent"
+            style={{ width: '100%', marginTop: '0.75rem' }}
+            disabled={savingRejection || rejection.totalRejectionTon <= 0}
+            onClick={() => saveRejectionOnly()}
+          >
+            {savingRejection
+              ? <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> جاري الحفظ...</>
+              : <><Save size={18} /> حفظ المرفوضات</>}
+          </button>
+        </div>
+      )}
+
+      {/* ===== 6. نافذة تقديم التماسات التأخير (Out of Window Request) ===== */}
       {needsRequest && (
         <div className="card fade-in stagger-4" style={{ borderColor: '#fed7aa' }}>
           <h3 style={{ fontSize: '0.95rem', color: '#d97706', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

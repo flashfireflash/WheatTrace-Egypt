@@ -8,6 +8,10 @@ using WheatTrace.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ensure robust binding to PORT before any services start (Render Free Tier Docker Compatibility)
+var renderPort = Environment.GetEnvironmentVariable("PORT");
+var listenPort = string.IsNullOrWhiteSpace(renderPort) ? "8080" : renderPort;
+builder.WebHost.UseUrls($"http://0.0.0.0:{listenPort}");
 // ---- البنية التحتية والخدمات الأساسية (Infrastructure & Core Services) ----
 // تم تسجيل الخدمات بنمط "حقن التبعية" (Dependency Injection) لضمان سهولة الاختبار 
 // وفصل المسؤوليات، حيث تم تعريف كائن (ICurrentUserService) لاستخراج بيانات المستخدم الحالي.
@@ -146,10 +150,7 @@ app.MapGet("/health", () => Results.Ok(new {
 
 app.MapHub<WheatTrace.Api.Hubs.LiveUpdateHub>("/api/hubs/live");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://*:{port}");
-
-Console.WriteLine($"[Render Startup] Application is explicitly binding to port: {port}");
+Console.WriteLine("[Render Startup] Web application is starting and binding sequence is delegated to WebHost...");
 app.Run();
 // خاص بالاختبارات: يجعل الـ Program مرئياً لـ WebApplicationFactory
 public partial class Program { }

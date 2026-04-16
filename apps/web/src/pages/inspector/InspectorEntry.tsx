@@ -552,6 +552,12 @@ export default function InspectorEntry() {
                 onChange={e => setNotes(e.target.value)}
                 style={{ resize: 'none', minHeight: 'auto' }}
               />
+              {myTotalKg === 0 && rejection.totalRejectionTon <= 0 && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--brand)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '1rem' }}>💡</span>
+                  في حالة عدم وجود استلام أو رفض اليوم، يرجى كتابة ملاحظة (مثال: لا يوجد توريد اليوم) لتنشيط زر الحفظ.
+                </div>
+              )}
             </div>
 
             {/* الزر الرئيسي لدفع الداتا للمقر (Submit Trigger) 
@@ -561,7 +567,7 @@ export default function InspectorEntry() {
               type="submit"
               className={`btn ${willExceed ? 'btn-danger' : 'btn-primary'}`}
               style={{ width: '100%', fontSize: '1rem' }}
-              disabled={saving || (myTotalKg === 0 && rejection.totalRejectionTon <= 0) || willExceed}
+              disabled={saving || (myTotalKg === 0 && rejection.totalRejectionTon <= 0 && notes.trim().length === 0) || willExceed}
             >
               {saving ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

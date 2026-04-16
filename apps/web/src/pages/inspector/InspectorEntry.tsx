@@ -638,7 +638,7 @@ export default function InspectorEntry() {
             disabled={requestingEdit || !isOnline}
             onClick={() => sendEditRequest()}
           >
-            {requestingEdit ? 'جاري ضخ الطلب...' : <><SendHorizonal size={18} /> رفع إرسالية الاسترحام التعديلي</>}
+            {requestingEdit ? 'جاري ضخ الطلب...' : <><SendHorizonal size={18} /> إرسال طلب استثنائي لتعديل الكميات</>}
           </button>
         </div>
       )}

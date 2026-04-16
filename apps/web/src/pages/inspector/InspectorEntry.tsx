@@ -604,7 +604,7 @@ export default function InspectorEntry() {
           <button
             className="btn btn-accent"
             style={{ width: '100%', marginTop: '0.75rem' }}
-            disabled={savingRejection || rejection.totalRejectionTon <= 0}
+            disabled={savingRejection}
             onClick={() => saveRejectionOnly()}
           >
             {savingRejection

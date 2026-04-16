@@ -75,17 +75,18 @@ public class DailyEntriesController : ControllerBase
     [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult<DailyEntryDto>> Create([FromBody] CreateDailyEntryRequest request)
     {
-        // 1. Resolve assignment
+        // 1. Resolve assignment — بحث عن تكليف نشط يغطي تاريخ الطلب (ليس بالضبط = تاريخ بداية التكليف)
         var assignment = await _db.InspectorAssignments
             .Include(a => a.Site)
             .Include(a => a.Shift)
             .FirstOrDefaultAsync(a =>
                 a.InspectorId == _currentUser.UserId &&
-                a.Date == request.Date &&
+                a.Date <= request.Date &&
+                (a.EndDate == null || a.EndDate >= request.Date) &&
                 a.IsActive);
 
         if (assignment is null)
-            return Forbid(); // No active assignment = no entry
+            return Forbid(); // No active assignment covering that date = no entry
 
         // 2. Holiday check
         if (await _holidays.IsHolidayAsync(request.Date, assignment.SiteId, assignment.Site?.GovernorateId))

@@ -29,13 +29,18 @@ public class AssignmentsController : ControllerBase
     public async Task<ActionResult<AssignmentDto>> GetMine([FromQuery] DateOnly? date)
     {
         var d = date ?? DateOnly.FromDateTime(DateTime.Today);
+        // البحث عن تكليف نشط يغطي التاريخ المطلوب (ليس فقط تكليف يبدأ في نفس اليوم)
         var a = await _db.InspectorAssignments
             .Include(x => x.Inspector)
             .Include(x => x.Site).ThenInclude(s => s!.Governorate)
             .Include(x => x.Site).ThenInclude(s => s!.District)
             .Include(x => x.Site).ThenInclude(s => s!.TransfersOut)
             .Include(x => x.Shift)
-            .FirstOrDefaultAsync(x => x.InspectorId == _currentUser.UserId && x.Date == d && x.IsActive);
+            .FirstOrDefaultAsync(x =>
+                x.InspectorId == _currentUser.UserId &&
+                x.Date <= d &&
+                (x.EndDate == null || x.EndDate >= d) &&
+                x.IsActive);
 
         if (a is null) return NotFound(new { message = "لا يوجد تعيين لهذا اليوم" });
         return Ok(MapDto(a));

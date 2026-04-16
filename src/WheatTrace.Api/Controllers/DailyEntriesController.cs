@@ -45,13 +45,17 @@ public class DailyEntriesController : ControllerBase
     public async Task<ActionResult<DailyEntryDto>> GetMine([FromQuery] DateOnly? date)
     {
         var targetDate = date ?? DateOnly.FromDateTime(DateTime.Today);
+
+        // البحث عن تكليف نشط يغطي التاريخ المطلوب بالنطاق الزمني (وليس المطابقة الحرفية لتاريخ البداية)
+        // هذا هو السبب الجذري لمشكلة عدم إمكانية تسجيل الكميات أو المرفوضات لأي يوم سابق داخل نطاق التكليف
         var assignment = await _db.InspectorAssignments
             .AsNoTracking()
             .Include(a => a.Site).ThenInclude(s => s!.Governorate)
             .Include(a => a.Shift)
             .FirstOrDefaultAsync(a =>
                 a.InspectorId == _currentUser.UserId &&
-                a.Date == targetDate &&
+                a.Date <= targetDate &&
+                (a.EndDate == null || a.EndDate >= targetDate) &&
                 a.IsActive);
 
         if (assignment is null)

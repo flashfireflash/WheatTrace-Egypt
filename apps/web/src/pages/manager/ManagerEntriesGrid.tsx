@@ -23,6 +23,14 @@ interface DailyEntry {
   isEditedByManager?: boolean;
   managerEditNote?: string;
   editApprovedAt?: string;
+  rejection?: {
+    totalRejectionTon: number;
+    moistureTon: number;
+    sandGravelTon: number;
+    impuritiesTon: number;
+    insectDamageTon: number;
+    treatedQuantityTon: number;
+  } | null;
 }
 
 function dateStr(d: Date) { return d.toISOString().slice(0, 10); }
@@ -243,6 +251,11 @@ export default function ManagerEntriesGrid() {
                       {(entry.wheat23_5.ton > 0 || entry.wheat23_5.kg > 0) && (
                         <span className="badge" style={{ background: 'var(--surface-2)', fontSize: '0.7rem' }}>
                           فرز 23.5: {entry.wheat23_5.ton}ط {entry.wheat23_5.kg}ك
+                        </span>
+                      )}
+                      {entry.rejection && entry.rejection.totalRejectionTon > 0 && (
+                        <span className="badge" style={{ background: '#fee2e2', color: '#dc2626', fontSize: '0.7rem', fontWeight: 700 }}>
+                          ⚠ مرفوض: {entry.rejection.totalRejectionTon} طن
                         </span>
                       )}
                     </div>

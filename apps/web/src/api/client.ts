@@ -57,6 +57,9 @@ export const updateEntry = (id: string, data: object) =>
 export const requestEdit = (id: string, data: object) =>
   api.post(`/daily-entries/${id}/edit-requests`, data).then((r) => r.data);
 
+export const upsertRejection = (entryId: string, data: object) =>
+  api.post(`/daily-entries/${entryId}/rejection`, data).then((r) => r.data);
+
 export const getEntriesGrid = (params: object) =>
   api.get('/daily-entries/grid', { params }).then((r) => r.data);
 

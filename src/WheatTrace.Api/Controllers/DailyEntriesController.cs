@@ -699,6 +699,57 @@ public class DailyEntriesController : ControllerBase
             await _hubContext.Clients.Group($"Governorate-{governorateId.Value}").SendAsync("DailyEntryUpdated");
         }
     }
+
+    /// <summary>Inspector/Manager: upsert rejection data for a daily entry.</summary>
+    [HttpPost("{id:guid}/rejection")]
+    [Authorize(Policy = "InspectorOrAbove")]
+    public async Task<ActionResult> UpsertRejection(Guid id, [FromBody] UpsertRejectionRequest request)
+    {
+        var entry = await _db.DailyEntries
+            .Include(e => e.Rejection)
+            .Include(e => e.Site)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (entry is null) return NotFound();
+
+        // Inspector can only update their own entries; Manager+ can update any in their scope
+        if (_currentUser.Role == "Inspector" && entry.InspectorId != _currentUser.UserId)
+            return Forbid();
+        if (_currentUser.Role == "GovernorateManager" && entry.Site?.GovernorateId != _currentUser.GovernorateId)
+            return Forbid();
+
+        if (entry.Rejection is null)
+        {
+            // Create new rejection record
+            var rejection = new Rejection
+            {
+                Id = Guid.NewGuid(),
+                DailyEntryId = id,
+                TotalRejectionTon = request.TotalRejectionTon,
+                MoistureTon = request.MoistureTon,
+                SandGravelTon = request.SandGravelTon,
+                ImpuritiesTon = request.ImpuritiesTon,
+                InsectDamageTon = request.InsectDamageTon,
+                TreatedQuantityTon = request.TreatedQuantityTon
+            };
+            _db.Rejections.Add(rejection);
+        }
+        else
+        {
+            // Update existing rejection record
+            entry.Rejection.TotalRejectionTon = request.TotalRejectionTon;
+            entry.Rejection.MoistureTon = request.MoistureTon;
+            entry.Rejection.SandGravelTon = request.SandGravelTon;
+            entry.Rejection.ImpuritiesTon = request.ImpuritiesTon;
+            entry.Rejection.InsectDamageTon = request.InsectDamageTon;
+            entry.Rejection.TreatedQuantityTon = request.TreatedQuantityTon;
+        }
+
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync("UpsertRejection", "Rejection", id);
+
+        return Ok(new { message = "تم حفظ بيانات المرفوضات بنجاح" });
+    }
     private static long CalcTotalKg(GradeQuantityDto g1, GradeQuantityDto g2, GradeQuantityDto g3)
         => (long)(g1.Ton * 1000 + g1.Kg) + (g2.Ton * 1000 + g2.Kg) + (g3.Ton * 1000 + g3.Kg);
 

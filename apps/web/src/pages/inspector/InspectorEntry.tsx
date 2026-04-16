@@ -10,6 +10,7 @@ import {
   createEntry,
   updateEntry,
   requestEdit,
+  upsertRejection,
 } from '../../api/client';
 import { GradeStepper, GradeDisplay } from '../../components/ui/GradeDisplay';
 import CapacityBar from '../../components/ui/CapacityBar';
@@ -138,9 +139,17 @@ export default function InspectorEntry() {
     mutationFn: async () => {
       const body = { date: selectedDate, wheat22_5, wheat23, wheat23_5, notes };
       // توجيه الطلب لتحديث (PUT) أو إنشاء (POST) بناءً على وجود معرف المدخلات.
-      if (existingEntry?.isEditable) return updateEntry(existingEntry.id, body);
-      if (!existingEntry)             return createEntry({ ...body, date: selectedDate });
-      throw new Error('انتهت فترة التعديل المباشر المسموح بها برمجياً');
+      let result;
+      if (existingEntry?.isEditable) result = await updateEntry(existingEntry.id, body);
+      else if (!existingEntry)       result = await createEntry({ ...body, date: selectedDate });
+      else throw new Error('انتهت فترة التعديل المباشر المسموح بها برمجياً');
+
+      // حفظ بيانات المرفوضات إن وُجدت (بعد نجاح حفظ الكميات)
+      const entryId = result?.id ?? existingEntry?.id;
+      if (entryId && rejection.totalRejectionTon > 0) {
+        await upsertRejection(entryId, rejection);
+      }
+      return result;
     },
     onSuccess: () => {
       toast.success('تم حفظ الكميات بنجاح ✅');

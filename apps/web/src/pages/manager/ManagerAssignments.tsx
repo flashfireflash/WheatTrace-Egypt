@@ -401,7 +401,6 @@ export default function ManagerAssignments() {
                   {assigning
                     ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />تنفيذ البث...</>
                     : <><Check size={16} />دمغ القرار</>}
-                  }
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>نبذ التعديلات</button>
               </div>

@@ -167,7 +167,7 @@ public class ReportsController : ControllerBase
     /// RBAC: المفتش <- ادخالاته | مدير/مراقب المحافظة <- محافظتهم | النظام <- الكل.
     /// </summary>
     [HttpGet("daily-breakdown")]
-    [Authorize(Policy = "ManagerOrAbove")]
+    [Authorize(Policy = "InspectorOrAbove")]
     public async Task<ActionResult> GetDailyBreakdown(
         [FromQuery] string startDate,
         [FromQuery] string endDate,

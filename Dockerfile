@@ -21,7 +21,5 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/out .
 
-# Render dynamically passes the port via the PORT environment variable
-ENV ASPNETCORE_URLS=http://+:${PORT:-5000}
-
+# ASP.NET Core will bind dynamically using the PORT env var in Program.cs.
 ENTRYPOINT ["dotnet", "WheatTrace.Api.dll"]

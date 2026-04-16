@@ -146,8 +146,8 @@ app.MapGet("/health", () => Results.Ok(new {
 
 app.MapHub<WheatTrace.Api.Hubs.LiveUpdateHub>("/api/hubs/live");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.Run($"http://0.0.0.0:{port}");
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Run($"http://*:{port}");
 
 // خاص بالاختبارات: يجعل الـ Program مرئياً لـ WebApplicationFactory
 public partial class Program { }

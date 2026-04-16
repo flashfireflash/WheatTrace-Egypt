@@ -561,7 +561,7 @@ export default function InspectorEntry() {
               type="submit"
               className={`btn ${willExceed ? 'btn-danger' : 'btn-primary'}`}
               style={{ width: '100%', fontSize: '1rem' }}
-              disabled={saving || (myTotalKg === 0) || willExceed}
+              disabled={saving || (myTotalKg === 0 && rejection.totalRejectionTon <= 0) || willExceed}
             >
               {saving ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

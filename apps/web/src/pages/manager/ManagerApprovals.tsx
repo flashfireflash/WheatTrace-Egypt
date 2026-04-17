@@ -7,16 +7,16 @@ import { ar } from 'date-fns/locale';
 
 interface EditRequest {
   id: string;
-  dailyEntryId: string;
+  entryId: string;
   siteName: string;
-  date: string;
+  entryDate: string;
   inspectorName: string;
-  reason: string;
+  rejectionReason?: string;
   status: 'Pending' | 'Approved' | 'Rejected';
-  // الحمولات المطلوبة في التعديل
-  wheat22_5Ton: number; wheat22_5Kg: number;
-  wheat23Ton: number;   wheat23Kg: number;
-  wheat23_5Ton: number; wheat23_5Kg: number;
+  // القيم المطلوبة بالكيلوجرام الكلى (null = لم يُطلب تغييرها)
+  newWheat22_5?: number | null;
+  newWheat23?: number | null;
+  newWheat23_5?: number | null;
   createdAt: string;
 }
 
@@ -29,24 +29,40 @@ interface EditRequest {
 export default function ManagerApprovals() {
   const qc = useQueryClient();
 
-  // جلب الطلبات المعلقة (Pending) المترقبة للمراجعة فقط لتنظيف الواجهة
+  // جلب الطلبات المعلقة — الـ API الصحيح تحت /daily-entries/edit-requests
   const { data: requests, isLoading } = useQuery<EditRequest[]>({
     queryKey: ['edit-requests', 'pending'],
-    queryFn: () => api.get('/edit-requests', { params: { status: 'Pending' } }).then(r => r.data)
+    queryFn: () => api.get('/daily-entries/edit-requests', { params: { pendingOnly: true } }).then(r => r.data)
   });
 
-  // معالجة قرار الموافقة بـ الرفض أو القبول من قبل إدارة المحافظة
-  const { mutate: reviewRequest, isPending: reviewing } = useMutation({
-    mutationFn: async ({ id, approved, note }: { id: string, approved: boolean, note: string }) => {
-      // الـ API الخاص بالمراجعة والذي يدير تغيير الرصيد الإجمالي في العهدة
-      await api.post(`/edit-requests/${id}/review`, { approved, reviewNote: note });
-    },
+  // موافقة على الطلب → /daily-entries/edit-requests/{id}/approve
+  const { mutate: approveRequest, isPending: approving } = useMutation({
+    mutationFn: (id: string) => api.post(`/daily-entries/edit-requests/${id}/approve`),
     onSuccess: () => {
-      toast.success('تم إنقاذ المراجعة وتسجيل التأشيرة بنجاح');
+      toast.success('تم اعتماد التعديل وتطبيقه على العهدة بنجاح ✅');
       qc.invalidateQueries({ queryKey: ['edit-requests'] });
     },
-    onError: (err: any) => toast.error(err.message || 'حدث خطأ تقني غير متوقع أثناء معالجة القرار')
+    onError: (err: any) => toast.error(err.response?.data?.message || 'حدث خطأ أثناء الموافقة')
   });
+
+  // رفض الطلب → /daily-entries/edit-requests/{id}/reject
+  const { mutate: rejectRequest, isPending: rejecting } = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api.post(`/daily-entries/edit-requests/${id}/reject`, { reason }),
+    onSuccess: () => {
+      toast.success('تم رفض الطلب وإخطار المفتش');
+      qc.invalidateQueries({ queryKey: ['edit-requests'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'حدث خطأ أثناء الرفض')
+  });
+
+  const reviewing = approving || rejecting;
+
+  // مساعد: تحويل الكيلوجرام الكلي إلى نص مقروء (طن + كجم)
+  const fmtKg = (kg?: number | null) => {
+    if (kg == null) return '—';
+    return `${Math.floor(kg / 1000)} طن ${kg % 1000} كجم`;
+  };
 
   if (isLoading) {
     return (
@@ -84,36 +100,38 @@ export default function ManagerApprovals() {
                   {format(new Date(req.createdAt), 'd MMM yyyy - HH:mm', { locale: ar })}
                 </span>
               </div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}><b>تاريخ سريان المفعول المُراد تعديله:</b> {req.date}</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}><b>تاريخ سريان المفعول المُراد تعديله:</b> {req.entryDate}</div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}><b>المندوب الملتَمس:</b> {req.inspectorName}</div>
             </div>
 
-            {/* تفصيل الكميات والدرجات بصورتها التصحيحية الجديدة المطلوبة */}
+            {/* تفصيل الكميات الجديدة المطلوبة */}
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>بيانات العهدة التصحيحية:</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
                 <div style={{ background: 'var(--surface-2)', padding: '0.5rem', borderRadius: 'var(--r-sm)', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>درجة 22.5</div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{req.wheat22_5Ton} <span style={{fontSize: '0.65rem', fontWeight: 400}}>طن</span> {req.wheat22_5Kg} <span style={{fontSize: '0.65rem', fontWeight: 400}}>كجم</span></div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{fmtKg(req.newWheat22_5)}</div>
                 </div>
                 <div style={{ background: 'var(--surface-2)', padding: '0.5rem', borderRadius: 'var(--r-sm)', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>درجة 23.0</div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{req.wheat23Ton} <span style={{fontSize: '0.65rem', fontWeight: 400}}>طن</span> {req.wheat23Kg} <span style={{fontSize: '0.65rem', fontWeight: 400}}>كجم</span></div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{fmtKg(req.newWheat23)}</div>
                 </div>
                 <div style={{ background: 'var(--surface-2)', padding: '0.5rem', borderRadius: 'var(--r-sm)', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>درجة 23.5</div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{req.wheat23_5Ton} <span style={{fontSize: '0.65rem', fontWeight: 400}}>طن</span> {req.wheat23_5Kg} <span style={{fontSize: '0.65rem', fontWeight: 400}}>كجم</span></div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{fmtKg(req.newWheat23_5)}</div>
                 </div>
               </div>
               
-              {/* تسبيب المفتش لتبرير هذا الاختراق للجدول الزمني للإدخال */}
-              <div style={{ padding: '0.75rem', background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: 'var(--r-sm)', fontSize: '0.82rem', display: 'flex', gap: '0.5rem' }}>
-                <AlertCircle size={16} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />
-                <div>
-                  <strong style={{ color: 'var(--warning)', display: 'block', marginBottom: '0.1rem' }}>سند وعذر المندوب:</strong>
-                  <span style={{ color: 'var(--text-primary)' }}>{req.reason}</span>
+              {/* سبب الطلب إن وُجد */}
+              {req.rejectionReason && (
+                <div style={{ padding: '0.75rem', background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: 'var(--r-sm)', fontSize: '0.82rem', display: 'flex', gap: '0.5rem' }}>
+                  <AlertCircle size={16} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div>
+                    <strong style={{ color: 'var(--warning)', display: 'block', marginBottom: '0.1rem' }}>سند وعذر المندوب:</strong>
+                    <span style={{ color: 'var(--text-primary)' }}>{req.rejectionReason}</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* أزرار اتخاذ التوجيه (Action Buttons) */}
@@ -123,9 +141,8 @@ export default function ManagerApprovals() {
                 style={{ flex: 1, padding: '0.6rem' }}
                 disabled={reviewing}
                 onClick={() => {
-                  // تحذير حاسم لأن هذه العملية تعبث كإجراء استثنائي في عهدة الجداول المحاسبية للقمح
                   if(window.confirm('هل أنت متأكد من مطابقة هذا التعديل للدفاتر الورقية والموافقة على تطبيقه كعهد جديدة على السجل الأصلي؟')) {
-                    reviewRequest({ id: req.id, approved: true, note: 'مراجعة معتمدة وموافق عليها' });
+                    approveRequest(req.id);
                   }
                 }}
               >
@@ -136,10 +153,9 @@ export default function ManagerApprovals() {
                 style={{ flex: 1, padding: '0.6rem' }}
                 disabled={reviewing}
                 onClick={() => {
-                  // إعطاء فرصة لإرفاق توبيخ أو تبرير من المدير بالرفض ليقرأها المفتش
                   const note = window.prompt('فضلاً ادرج حيثيات وأسباب رفض تعديل عهدة المندوب:');
                   if (note !== null) {
-                    reviewRequest({ id: req.id, approved: false, note });
+                    rejectRequest({ id: req.id, reason: note });
                   }
                 }}
               >
@@ -152,3 +168,5 @@ export default function ManagerApprovals() {
     </div>
   );
 }
+
+

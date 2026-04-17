@@ -215,6 +215,7 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
   let w22_5Ton = 0, w22_5Kg = 0;
   let w23Ton = 0, w23Kg = 0;
   let w23_5Ton = 0, w23_5Kg = 0;
+  let totalRejectedTon = 0;
 
   data.forEach((gov: any) => {
     gov.authorities?.forEach((auth: any) => {
@@ -222,6 +223,7 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
         w22_5Kg += (s.w22_5Ton || 0) * 1000 + (s.w22_5Kg || 0);
         w23Kg   += (s.w23Ton   || 0) * 1000 + (s.w23Kg   || 0);
         w23_5Kg += (s.w23_5Ton || 0) * 1000 + (s.w23_5Kg || 0);
+        totalRejectedTon += (s.rejectedTon ?? s.RejectedTon ?? 0);
       });
     });
   });
@@ -270,6 +272,24 @@ function DigitalTotalWidget({ data }: { data: any[] }) {
             بيانات محدثة لحظياً
           </div>
         </div>
+
+        {/* إجمالي المرفوضات التراكمي الموسمي */}
+        {totalRejectedTon > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+            borderRadius: '12px', padding: '0.75rem 1.25rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fca5a5', fontSize: '0.9rem', fontWeight: 600 }}>
+              <div style={{ width: 8, height: 8, background: '#ef4444', borderRadius: '50%', boxShadow: '0 0 8px #ef4444' }} />
+              إجمالي المرفوضات التراكمي الموسمي
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fca5a5', fontFamily: 'system-ui' }}>
+              {totalRejectedTon.toLocaleString('en-US')}
+              <span style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: 600, marginRight: '0.4rem' }}>طن</span>
+            </div>
+          </div>
+        )}
 
         {/* تفصيل درجات القمح */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', borderTop: '1px solid rgba(52, 211, 153, 0.2)', paddingTop: '1.5rem' }}>

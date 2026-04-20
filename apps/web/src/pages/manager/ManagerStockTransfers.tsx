@@ -147,24 +147,24 @@ export default function ManagerStockTransfers() {
               <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>صافي 22.5</div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="number" min="0" className="input" placeholder="كجم" value={form.w22_5Kg || ''} onChange={e => setForm(f => ({...f, w22_5Kg: parseInt(e.target.value)||0}))} />
                   <input type="number" min="0" className="input" placeholder="طن" value={form.w22_5Ton || ''} onChange={e => setForm(f => ({...f, w22_5Ton: parseInt(e.target.value)||0}))} />
-                  <input type="number" min="0" max="999" className="input" placeholder="كجم" value={form.w22_5Kg || ''} onChange={e => setForm(f => ({...f, w22_5Kg: parseInt(e.target.value)||0}))} />
                 </div>
               </div>
 
               <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>صافي 23.0</div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="number" min="0" className="input" placeholder="كجم" value={form.w23Kg || ''} onChange={e => setForm(f => ({...f, w23Kg: parseInt(e.target.value)||0}))} />
                   <input type="number" min="0" className="input" placeholder="طن" value={form.w23Ton || ''} onChange={e => setForm(f => ({...f, w23Ton: parseInt(e.target.value)||0}))} />
-                  <input type="number" min="0" max="999" className="input" placeholder="كجم" value={form.w23Kg || ''} onChange={e => setForm(f => ({...f, w23Kg: parseInt(e.target.value)||0}))} />
                 </div>
               </div>
 
               <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>صافي 23.5</div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="number" min="0" className="input" placeholder="كجم" value={form.w23_5Kg || ''} onChange={e => setForm(f => ({...f, w23_5Kg: parseInt(e.target.value)||0}))} />
                   <input type="number" min="0" className="input" placeholder="طن" value={form.w23_5Ton || ''} onChange={e => setForm(f => ({...f, w23_5Ton: parseInt(e.target.value)||0}))} />
-                  <input type="number" min="0" max="999" className="input" placeholder="كجم" value={form.w23_5Kg || ''} onChange={e => setForm(f => ({...f, w23_5Kg: parseInt(e.target.value)||0}))} />
                 </div>
               </div>
             </div>

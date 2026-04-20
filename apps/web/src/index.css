@@ -553,47 +553,40 @@ a { text-decoration: none; color: inherit; }
     -webkit-text-fill-color: var(--text-primary) !important;
 }
 
-/* Qty Stepper */
-.qty-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--surface-2);
-  border-radius: var(--r-md);
-  padding: 0.35rem;
+/* Qty Text Input (plain text box without +/- buttons) */
+.qty-text-input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
   border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: 'Cairo', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-align: center;
+  background: var(--surface-1);
+  color: var(--text-primary);
   transition: all 0.2s;
+  outline: none;
+  /* إخفاء أسهم الإدخال الرقمي (spinners) */
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
-
-.qty-stepper:focus-within {
+.qty-text-input::-webkit-inner-spin-button,
+.qty-text-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty-text-input:focus {
   border-color: var(--brand);
   box-shadow: var(--shadow-glow);
-  background: var(--surface-1);
 }
-
-.qty-stepper__btn {
-  width: 44px; height: 44px;
-  border-radius: var(--r-sm);
-  border: none;
-  background: var(--surface-1);
-  color: var(--brand);
-  font-size: 1.4rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.15s;
-  flex-shrink: 0;
+.qty-text-input:hover:not(:focus) {
+  border-color: var(--text-muted);
 }
-.qty-stepper__btn:hover { background: var(--brand); color: white; transform: scale(1.08); }
-.qty-stepper__btn:active { transform: scale(0.94); }
-
-.qty-stepper__input {
-  flex: 1; min-width: 0; text-align: center; border: none; background: transparent;
-  font-size: 1.2rem; font-weight: 800; color: var(--text-primary);
-  font-family: 'Cairo', sans-serif;
+.qty-text-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
-.qty-stepper__input:focus { outline: none; }
 
 /* ─────────────────────────────────────────────────────────────
    BADGES & TAGS

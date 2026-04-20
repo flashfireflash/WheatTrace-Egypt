@@ -16,10 +16,11 @@ interface GradeStepperProps {
 }
 
 /**
- * מكوّن المُدخِل الدقيق (Stepper) لكميات الدرجة (طن / كجم).
- * مصمم لتسهيل وتسريع الإدخال عبر الأزرار أو الكتابة المباشرة مع تأمين القيم المدخلة:
+ * مكوّن الإدخال النصي لكميات الدرجة (طن / كجم).
+ * مصمم كمربعات نصية بسيطة بدون أزرار + أو − لسهولة الإدخال المباشر.
  * - لا يسمح بإدخال قيم سالبة.
- * - يقيّد الكيلوجرام بحد أقصى (999 كجم) لأن ما يزيد عن ذلك يصبح طناً.
+ * - يقبل أي كمية بدون حد أقصى.
+ * - الترتيب: الكيلوجرام أولاً ثم الطن.
  */
 export function GradeStepper({ label, ton, kg, onChangeTon, onChangeKg, disabled }: GradeStepperProps) {
   return (
@@ -38,68 +39,34 @@ export function GradeStepper({ label, ton, kg, onChangeTon, onChangeKg, disabled
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
+        {/* خانة الكيلوجرام أولاً (Kg input) */}
+        <div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 600 }}>كجم</div>
+          <input
+            className="qty-text-input"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={kg}
+            onChange={e => onChangeKg(Math.max(0, parseInt(e.target.value) || 0))}
+            disabled={disabled}
+            aria-label={`كجم درجة ${label}`}
+          />
+        </div>
+
         {/* خانة الطن (Ton input) */}
         <div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 600 }}>طن</div>
-          <div className="qty-stepper">
-            <button
-              type="button"
-              className="qty-stepper__btn"
-              onClick={() => onChangeTon(Math.max(0, ton - 1))}
-              disabled={disabled || ton === 0}
-              aria-label={`تقليل طن درجة ${label}`}
-            >−</button>
-            <input
-              className="qty-stepper__input"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={ton}
-              onChange={e => onChangeTon(Math.max(0, parseInt(e.target.value) || 0))}
-              disabled={disabled}
-              aria-label={`طن درجة ${label}`}
-            />
-            <button
-              type="button"
-              className="qty-stepper__btn"
-              onClick={() => onChangeTon(ton + 1)}
-              disabled={disabled}
-              aria-label={`زيادة طن درجة ${label}`}
-            >+</button>
-          </div>
-        </div>
-
-        {/* خانة الكيلوجرام (Kg input) */}
-        <div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: 600 }}>كجم</div>
-          <div className="qty-stepper">
-            {/* قفزات الكيلوجرام محددة بـ 50 لتسريع الإدخال نظراً لدورات الموازين المعيارية */}
-            <button
-              type="button"
-              className="qty-stepper__btn"
-              onClick={() => onChangeKg(Math.max(0, kg - 50))} // منع القيم السالبة
-              disabled={disabled || kg === 0}
-              aria-label={`تقليل كجم درجة ${label}`}
-            >−</button>
-            <input
-              className="qty-stepper__input"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={999}
-              value={kg}
-              onChange={e => onChangeKg(Math.min(999, Math.max(0, parseInt(e.target.value) || 0)))} // الحد الأقصى 999
-              disabled={disabled}
-              aria-label={`كجم درجة ${label}`}
-            />
-            <button
-              type="button"
-              className="qty-stepper__btn"
-              onClick={() => onChangeKg(Math.min(999, kg + 50))} // الحد الأقصى 999
-              disabled={disabled}
-              aria-label={`زيادة كجم درجة ${label}`}
-            >+</button>
-          </div>
+          <input
+            className="qty-text-input"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={ton}
+            onChange={e => onChangeTon(Math.max(0, parseInt(e.target.value) || 0))}
+            disabled={disabled}
+            aria-label={`طن درجة ${label}`}
+          />
         </div>
       </div>
 

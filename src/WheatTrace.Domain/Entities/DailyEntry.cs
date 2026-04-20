@@ -26,11 +26,10 @@ public class DailyEntry : BaseEntity
     public Shift? Shift { get; set; }
 
     // --- كميات القمح مقسّمة حسب درجة الجودة (Grade) ---
-    // القاعدة: الكجم يجب أن يكون بين 0 و 999 فقط (أقل من طن كامل)
 
     // درجة 22.5 قنطار
     public int Wheat22_5Ton { get; set; }   // الأطنان الكاملة
-    public int Wheat22_5Kg { get; set; }    // الكيلوجرامات المتبقية (0-999)
+    public int Wheat22_5Kg { get; set; }    // الكيلوجرامات
 
     // درجة 23 قنطار
     public int Wheat23Ton { get; set; }

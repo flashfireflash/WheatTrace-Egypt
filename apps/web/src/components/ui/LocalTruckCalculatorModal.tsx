@@ -320,12 +320,12 @@ export default function LocalTruckCalculatorModal({ isOpen, onClose, selectedDat
         <div style={{ padding: '1rem', flex: 1, overflowY: 'auto', background: 'var(--bg-base)' }}>
           <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', alignItems: 'end' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>طن</label>
-              <input type="number" min="0" step="any" className="input" value={ton} onChange={e => setTon(e.target.value)} placeholder="0" />
+              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>كجم</label>
+              <input type="number" min="0" step="any" className="input" value={kg} onChange={e => setKg(e.target.value)} placeholder="0" />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>كجم</label>
-              <input type="number" min="0" max="999" step="any" className="input" value={kg} onChange={e => setKg(e.target.value)} placeholder="0" />
+              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>طن</label>
+              <input type="number" min="0" step="any" className="input" value={ton} onChange={e => setTon(e.target.value)} placeholder="0" />
             </div>
             <button type="submit" className="btn btn-primary" style={{ padding: '0.65rem 1rem' }} disabled={!ton && !kg}>
               <Plus size={18} />

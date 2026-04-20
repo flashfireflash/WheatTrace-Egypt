@@ -346,14 +346,14 @@ function ManagerEditModal({ entry, form, setForm, onSubmit, onClose, isPending }
               <div key={label} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{label}</div>
                 <div>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>طن</label>
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>كجم</label>
                   <input type="number" min={0} className="input" style={{ padding: '0.3rem 0.6rem' }}
-                    value={form[tonKey]} onChange={e => setForm((f: any) => ({ ...f, [tonKey]: +e.target.value }))} />
+                    value={form[kgKey]} onChange={e => setForm((f: any) => ({ ...f, [kgKey]: Math.max(0, +e.target.value) }))} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>كجم (0-999)</label>
-                  <input type="number" min={0} max={999} className="input" style={{ padding: '0.3rem 0.6rem' }}
-                    value={form[kgKey]} onChange={e => setForm((f: any) => ({ ...f, [kgKey]: +e.target.value }))} />
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>طن</label>
+                  <input type="number" min={0} className="input" style={{ padding: '0.3rem 0.6rem' }}
+                    value={form[tonKey]} onChange={e => setForm((f: any) => ({ ...f, [tonKey]: Math.max(0, +e.target.value) }))} />
                 </div>
               </div>
             ))}
